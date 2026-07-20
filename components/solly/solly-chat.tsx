@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react"
 import Image from "next/image"
-import { Send, FileCheck2, Lock, Unlock, Loader2, ShieldCheck } from "lucide-react"
+import { Send, FileCheck2, Lock, Unlock, Loader2, ShieldCheck, ShoppingBag } from "lucide-react"
 
 // ---------------------------------------------------------------------------
 // Solly — the WHS Agent chat interface.
@@ -50,6 +50,7 @@ export default function SollyChat({ clientEmail: initialEmail }: { clientEmail?:
   const [conversationId, setConversationId] = useState<string | null>(null)
   const [phase, setPhase] = useState<Phase>("intake")
   const [recommendedCodes, setRecommendedCodes] = useState<string[]>([])
+  const [recommendedPackages, setRecommendedPackages] = useState<{ code: string; name: string }[]>([])
   const [selectedCodes, setSelectedCodes] = useState<Set<string>>(new Set())
   const [drafts, setDrafts] = useState<DraftResult[]>([])
   const [activeDraftCode, setActiveDraftCode] = useState<string | null>(null)
@@ -132,6 +133,7 @@ export default function SollyChat({ clientEmail: initialEmail }: { clientEmail?:
       if (data.type === "recommendation") {
         setRecommendedCodes(data.recommendedCodes ?? [])
         setSelectedCodes(new Set(data.recommendedCodes ?? []))
+        setRecommendedPackages(data.recommendedPackages ?? [])
         setPhase("recommended")
       }
     } catch (err) {
@@ -277,6 +279,7 @@ export default function SollyChat({ clientEmail: initialEmail }: { clientEmail?:
         {phase === "recommended" && (
           <RecommendationCard
             codes={recommendedCodes}
+            packages={recommendedPackages}
             selected={selectedCodes}
             onToggle={toggleCode}
             onConfirm={confirmAndDraft}
@@ -398,46 +401,82 @@ function StatusStamp({ phase }: { phase: Phase }) {
 
 function RecommendationCard({
   codes,
+  packages,
   selected,
   onToggle,
   onConfirm,
   busy,
 }: {
   codes: string[]
+  packages: { code: string; name: string }[]
   selected: Set<string>
   onToggle: (code: string) => void
   onConfirm: () => void
   busy: boolean
 }) {
   return (
-    <div className="rounded-xl border border-[#E4DFD3] bg-white p-4">
-      <div className="mb-3 flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-[#18707F]">
-        <FileCheck2 className="h-3.5 w-3.5" />
-        Solly recommends
-      </div>
-      <div className="space-y-2">
-        {codes.map((code) => (
-          <label
-            key={code}
-            className="flex cursor-pointer items-center gap-3 rounded-lg border border-[#E4DFD3] px-3 py-2.5 text-sm transition hover:border-[#18707F]"
+    <div className="space-y-3">
+      {codes.length > 0 && (
+        <div className="rounded-xl border border-[#E4DFD3] bg-white p-4">
+          <div className="mb-3 flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-[#18707F]">
+            <FileCheck2 className="h-3.5 w-3.5" />
+            Solly can draft these with you
+          </div>
+          <div className="space-y-2">
+            {codes.map((code) => (
+              <label
+                key={code}
+                className="flex cursor-pointer items-center gap-3 rounded-lg border border-[#E4DFD3] px-3 py-2.5 text-sm transition hover:border-[#18707F]"
+              >
+                <input
+                  type="checkbox"
+                  checked={selected.has(code)}
+                  onChange={() => onToggle(code)}
+                  className="h-4 w-4 accent-[#18707F]"
+                />
+                <span className="font-mono text-xs text-[#5A6472]">{code}</span>
+              </label>
+            ))}
+          </div>
+          <button
+            onClick={onConfirm}
+            disabled={busy || selected.size === 0}
+            className="mt-4 w-full rounded-full bg-[#16294D] px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-[#18707F] disabled:opacity-40"
           >
-            <input
-              type="checkbox"
-              checked={selected.has(code)}
-              onChange={() => onToggle(code)}
-              className="h-4 w-4 accent-[#18707F]"
-            />
-            <span className="font-mono text-xs text-[#5A6472]">{code}</span>
-          </label>
-        ))}
-      </div>
-      <button
-        onClick={onConfirm}
-        disabled={busy || selected.size === 0}
-        className="mt-4 w-full rounded-full bg-[#16294D] px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-[#18707F] disabled:opacity-40"
-      >
-        {busy ? "Confirming…" : `Draft ${selected.size} template${selected.size === 1 ? "" : "s"} with Solly`}
-      </button>
+            {busy ? "Confirming…" : `Draft ${selected.size} template${selected.size === 1 ? "" : "s"} with Solly`}
+          </button>
+        </div>
+      )}
+
+      {packages.length > 0 && (
+        <div className="rounded-xl border border-[#C9A84C]/40 bg-[#C9A84C]/10 p-4">
+          <div className="mb-3 flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-[#8A6D2B]">
+            <ShoppingBag className="h-3.5 w-3.5" />
+            Purchase directly
+          </div>
+          <div className="space-y-2">
+            {packages.map((p) => (
+              <div
+                key={p.code}
+                className="flex items-center justify-between rounded-lg border border-[#C9A84C]/30 bg-white px-3 py-2.5 text-sm"
+              >
+                <div>
+                  <p className="font-medium text-[#16294D]">{p.name}</p>
+                  <p className="font-mono text-[11px] text-[#5A6472]">{p.code}</p>
+                </div>
+                <a
+                  href="https://www.solumsafetyconsulting.com.au/templates"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="rounded-full bg-[#C9A84C] px-3 py-1.5 text-xs font-semibold text-[#16294D] transition hover:brightness-95"
+                >
+                  View & buy
+                </a>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
     </div>
   )
 }

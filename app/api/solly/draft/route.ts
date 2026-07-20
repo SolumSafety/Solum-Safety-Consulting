@@ -18,8 +18,24 @@ function applyWatermark(html: string): string {
       }
     </style>`
   const overlay = `<div class="solly-watermark-overlay"><span class="solly-watermark-text">DRAFT — NOT FOR USE — PURCHASE TO UNLOCK</span></div>`
-  return `${watermarkStyle}<div class="solly-watermark-wrap">${overlay}${html}</div>`
+  return `${watermarkStyle}<div class="solly-watermark-wrap">${overlay}${html}${DRAFT_DISCLAIMER}</div>`
 }
+
+// Fixed, non-AI-generated text — always identical regardless of what Claude
+// produced, so it can't be silently dropped or altered by the model.
+const DRAFT_DISCLAIMER = `
+  <div style="margin-top:32px;padding:16px;border-top:2px solid #E4DFD3;font-size:12px;color:#5A6472;">
+    <strong>Draft notice:</strong> This document was drafted with the assistance of Solly, an AI WHS Agent, based
+    on information provided in a chat conversation. It has not yet been reviewed by a qualified WHS professional
+    and must not be used, relied upon, or actioned in this form.
+  </div>`
+
+const FINAL_DISCLAIMER = `
+  <div style="margin-top:32px;padding:16px;border-top:2px solid #E4DFD3;font-size:12px;color:#5A6472;">
+    <strong>Document notice:</strong> This document was drafted with the assistance of Solly, an AI WHS Agent, and
+    has been reviewed by Solum Safety Consulting prior to delivery. It should be adapted to reflect your specific
+    site conditions and does not constitute legal advice.
+  </div>`
 
 export async function POST(request: NextRequest) {
   try {
@@ -97,13 +113,14 @@ export async function POST(request: NextRequest) {
         .trim()
 
       const previewHtml = applyWatermark(filledHtml)
+      const finalHtmlWithDisclaimer = `${filledHtml}${FINAL_DISCLAIMER}`
 
       const { error: updateError } = await supabaseAdmin
         .from("form_sessions")
         .update({
           preview_html: previewHtml,
           // Store the clean version too so finalize doesn't need to re-generate.
-          final_html: filledHtml,
+          final_html: finalHtmlWithDisclaimer,
           status: "ready_for_purchase",
           updated_at: new Date().toISOString(),
         })

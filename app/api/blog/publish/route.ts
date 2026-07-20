@@ -3,7 +3,7 @@ import { getSupabaseAdmin } from "@/lib/supabase-admin"
 
 export async function POST(request: NextRequest) {
   const bypassKey = request.headers.get("x-solly-bypass")
-  const expected = process.env.SOLLY_ADMIN_BYPASS_KEY
+  const expected = process.env.ADMIN_REVIEW_KEY
   if (!expected || bypassKey !== expected) {
     return NextResponse.json({ error: "Not authorized." }, { status: 401 })
   }

@@ -47,15 +47,22 @@ export async function GET(request: NextRequest) {
 
     // If this purchase included the SolumWHS package, grant the buyer
     // access to Solly (the AI WHS Agent) in the assessment platform.
-    // Non-blocking for the download itself — the buyer is owed their
-    // files regardless of whether this side-effect succeeds.
-    await grantSollyEntitlementIfPurchased({
-      codes,
-      email: session.customer_details?.email ?? session.customer_email ?? null,
-      stripeSessionId: session.id,
-      stripePaymentIntent:
-        typeof session.payment_intent === "string" ? session.payment_intent : session.payment_intent?.id,
-    })
+    // Fully non-blocking for the download itself — the buyer has paid and is
+    // owed their files, so a failure here must never surface as an error.
+    try {
+      await grantSollyEntitlementIfPurchased({
+        codes,
+        email: session.customer_details?.email ?? session.customer_email ?? null,
+        stripeSessionId: session.id,
+        stripePaymentIntent:
+          typeof session.payment_intent === "string" ? session.payment_intent : session.payment_intent?.id,
+      })
+    } catch (grantError) {
+      console.log(
+        "[v0] Solly entitlement grant threw (download continues):",
+        grantError instanceof Error ? grantError.message : String(grantError),
+      )
+    }
 
     // The requested file MUST belong to one of the purchased products.
     const unlockedFiles = new Set(codes.flatMap((c) => getProduct(c)?.files ?? []))

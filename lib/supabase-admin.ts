@@ -23,8 +23,36 @@ export function getSupabaseAdmin(): SupabaseClient | null {
     return cached
   }
 
-  cached = createClient(url, serviceRoleKey, {
-    auth: { persistSession: false },
-  })
+  // Guard against a misconfigured URL (e.g. a JWT/anon key pasted into the URL
+  // field). createClient() throws on an invalid URL, which must never bubble
+  // up and break the download route for a paying buyer.
+  const isValidUrl = /^https?:\/\//i.test(url) && (() => {
+    try {
+      new URL(url)
+      return true
+    } catch {
+      return false
+    }
+  })()
+
+  if (!isValidUrl) {
+    console.log(
+      "[v0] NEXT_PUBLIC_SUPABASE_URL is not a valid URL (expected e.g. https://<project>.supabase.co). Solly entitlement grants are disabled until it is fixed.",
+    )
+    cached = null
+    return cached
+  }
+
+  try {
+    cached = createClient(url, serviceRoleKey, {
+      auth: { persistSession: false },
+    })
+  } catch (err) {
+    console.log(
+      "[v0] Failed to initialise Supabase admin client — Solly entitlement grants disabled:",
+      err instanceof Error ? err.message : String(err),
+    )
+    cached = null
+  }
   return cached
 }

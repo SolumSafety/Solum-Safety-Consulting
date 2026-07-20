@@ -4,6 +4,7 @@ import { get } from "@vercel/blob"
 import { stripe } from "@/lib/stripe"
 import { getProduct } from "@/lib/products"
 import { decodeCodesFromMetadata } from "@/lib/checkout"
+import { grantSollyEntitlementIfPurchased } from "@/lib/solly-entitlement"
 
 // Downloads remain available for 7 days after purchase.
 const DOWNLOAD_WINDOW_MS = 7 * 24 * 60 * 60 * 1000
@@ -43,6 +44,18 @@ export async function GET(request: NextRequest) {
     if (codes.length === 0) {
       return NextResponse.json({ error: "Purchase could not be matched to a product." }, { status: 404 })
     }
+
+    // If this purchase included the SolumWHS package, grant the buyer
+    // access to Solly (the AI WHS Agent) in the assessment platform.
+    // Non-blocking for the download itself — the buyer is owed their
+    // files regardless of whether this side-effect succeeds.
+    await grantSollyEntitlementIfPurchased({
+      codes,
+      email: session.customer_details?.email ?? session.customer_email ?? null,
+      stripeSessionId: session.id,
+      stripePaymentIntent:
+        typeof session.payment_intent === "string" ? session.payment_intent : session.payment_intent?.id,
+    })
 
     // The requested file MUST belong to one of the purchased products.
     const unlockedFiles = new Set(codes.flatMap((c) => getProduct(c)?.files ?? []))

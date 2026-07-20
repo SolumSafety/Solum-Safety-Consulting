@@ -137,7 +137,7 @@ export const bundles: Bundle[] = [
     name: "Solum WHS Package",
     code: "SLMPKG-WHS-Bundle-001",
     description:
-      "Our complete WHS library in one package: WHS forms, Project Management WHS documents, generic toolbox talks and leadership guides. Industry-specific toolbox talks are not included. The quickest way to stand up a full safety system.",
+      "Everything in one package: every WHS form and template, all Project Management WHS documents, generic toolbox talks and the full leadership series — plus Solly, our AI agent who helps you complete your forms. Industry-specific toolbox talks are the only thing not included. The quickest way to stand up a full safety system.",
     bestValue: true,
   },
   {

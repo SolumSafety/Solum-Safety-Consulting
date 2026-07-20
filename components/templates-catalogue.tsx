@@ -2,7 +2,20 @@
 
 import { useMemo, useState } from "react"
 import Link from "next/link"
-import { Search, Lock, Package, ChevronRight } from "lucide-react"
+import {
+  Search,
+  Lock,
+  Package,
+  ChevronRight,
+  Folder,
+  FolderOpen,
+  ClipboardCheck,
+  HardHat,
+  MessagesSquare,
+  Factory,
+  HeartHandshake,
+  Sparkles,
+} from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { BuyButton } from "@/components/buy-button"
 import { AddToCartButton } from "@/components/add-to-cart-button"
@@ -15,9 +28,18 @@ import {
   whsSubcategories,
   getWhsSubcategory,
   type TemplateItem,
-  type WhsSubcategoryId,
 } from "@/lib/catalogue"
 import { getProduct, isPurchasable, formatPrice } from "@/lib/products"
+
+/** Number of generic toolbox talks included in the generic bundle. */
+const GENERIC_TOOLBOX_COUNT = 68
+/** Leadership guides shown in full before the "additional" list. */
+const LEADERSHIP_FEATURED = 5
+
+function enquiryHref(name: string, code: string) {
+  const params = new URLSearchParams({ enquiry: name, code })
+  return `/?${params.toString()}#contact`
+}
 
 function PurchaseCTA({
   code,
@@ -37,12 +59,7 @@ function PurchaseCTA({
     }
     return (
       <div className="flex flex-col gap-2">
-        <AddToCartButton
-          code={code}
-          name={name}
-          priceInCents={product.priceInCents}
-          tone={tone}
-        />
+        <AddToCartButton code={code} name={name} priceInCents={product.priceInCents} tone={tone} />
         <BuyButton code={code} price={formatPrice(product.priceInCents)} tone="ghost" />
       </div>
     )
@@ -59,65 +76,6 @@ function PurchaseCTA({
     >
       Enquire to Purchase
     </Button>
-  )
-}
-
-type Category = "all" | "whs" | "bundles" | "project" | "leadership"
-
-const categories: { id: Category; label: string }[] = [
-  { id: "all", label: "All" },
-  { id: "whs", label: "WHS" },
-  { id: "bundles", label: "Bundles" },
-  { id: "project", label: "Project WHS" },
-  { id: "leadership", label: "Leadership" },
-]
-
-function enquiryHref(name: string, code: string) {
-  const params = new URLSearchParams({ enquiry: name, code })
-  return `/?${params.toString()}#contact`
-}
-
-function TemplateCard({ item }: { item: TemplateItem }) {
-  return (
-    <article className="flex flex-col overflow-hidden rounded-xl border border-border bg-card transition-shadow hover:shadow-md">
-      {/* Live preview of the digital form */}
-      <div className="relative aspect-[860/560] w-full overflow-hidden border-b border-border bg-muted">
-        <img
-          src={`/thumbnails/${item.code}.png`}
-          alt={`Preview of the ${item.name} digital form`}
-          loading="lazy"
-          className="h-full w-full object-cover object-top"
-        />
-        <span className="absolute right-3 top-3 inline-flex items-center gap-1 rounded-full bg-background/90 px-2.5 py-1 text-xs font-semibold text-foreground shadow-sm backdrop-blur">
-          <Lock className="h-3 w-3" aria-hidden="true" />
-          Licensed
-        </span>
-      </div>
-
-      <div className="flex flex-1 flex-col p-6">
-        <h3 className="font-heading text-base font-bold leading-snug text-card-foreground">{item.name}</h3>
-        <p className="mt-1 font-mono text-xs text-muted-foreground">{item.code}</p>
-
-        <p className="mt-3 flex-1 text-sm leading-relaxed text-muted-foreground">{item.description}</p>
-
-      <div className="mt-4 flex flex-wrap gap-2">
-        {item.formats.map((f) => (
-          <span
-            key={f}
-            className="rounded-md bg-muted px-2 py-1 text-xs font-medium text-muted-foreground"
-          >
-            {f}
-          </span>
-        ))}
-      </div>
-
-        <PriceLine code={item.code} />
-
-        <div className="mt-4">
-          <PurchaseCTA code={item.code} name={item.name} />
-        </div>
-      </div>
-    </article>
   )
 }
 
@@ -140,87 +98,266 @@ function PriceLine({ code, invert = false }: { code: string; invert?: boolean })
   )
 }
 
-function SectionHeading({
-  eyebrow,
-  title,
-  subtitle,
+function TemplateCard({ item }: { item: TemplateItem }) {
+  return (
+    <article className="flex flex-col overflow-hidden rounded-xl border border-border bg-card transition-shadow hover:shadow-md">
+      {/* Live preview of the digital form */}
+      <div className="relative aspect-[860/560] w-full overflow-hidden border-b border-border bg-muted">
+        <img
+          src={`/thumbnails/${item.code}.png`}
+          alt={`Preview of the ${item.name} digital form`}
+          loading="lazy"
+          className="h-full w-full object-cover object-top"
+        />
+        <span className="absolute right-3 top-3 inline-flex items-center gap-1 rounded-full bg-background/90 px-2.5 py-1 text-xs font-semibold text-foreground shadow-sm backdrop-blur">
+          <Lock className="h-3 w-3" aria-hidden="true" />
+          Licensed
+        </span>
+      </div>
+
+      <div className="flex flex-1 flex-col p-6">
+        <h4 className="font-heading text-base font-bold leading-snug text-card-foreground">{item.name}</h4>
+        <p className="mt-1 font-mono text-xs text-muted-foreground">{item.code}</p>
+        <p className="mt-3 flex-1 text-sm leading-relaxed text-muted-foreground">{item.description}</p>
+
+        <div className="mt-4 flex flex-wrap gap-2">
+          {item.formats.map((f) => (
+            <span
+              key={f}
+              className="rounded-md bg-muted px-2 py-1 text-xs font-medium text-muted-foreground"
+            >
+              {f}
+            </span>
+          ))}
+        </div>
+
+        <PriceLine code={item.code} />
+
+        <div className="mt-4">
+          <PurchaseCTA code={item.code} name={item.name} />
+        </div>
+      </div>
+    </article>
+  )
+}
+
+/** A compact list row used for the "additional" leadership guides. */
+function CompactRow({ item }: { item: TemplateItem }) {
+  return (
+    <article className="flex flex-col gap-3 rounded-lg border border-border bg-card p-4 sm:flex-row sm:items-center sm:justify-between">
+      <div className="min-w-0">
+        <h4 className="font-heading text-sm font-bold text-card-foreground">{item.name}</h4>
+        <p className="mt-0.5 text-sm leading-relaxed text-muted-foreground">{item.description}</p>
+      </div>
+      <div className="shrink-0 sm:w-44">
+        <PriceLine code={item.code} />
+        <div className="mt-2">
+          <PurchaseCTA code={item.code} name={item.name} />
+        </div>
+      </div>
+    </article>
+  )
+}
+
+type FolderId = "bundles" | "whs" | "project" | "generic" | "industry" | "leadership"
+
+const folderMeta: {
+  id: FolderId
+  label: string
+  icon: typeof Folder
+  blurb: string
+}[] = [
+  {
+    id: "bundles",
+    label: "Bundles & Packages",
+    icon: Package,
+    blurb: "Value-priced collections and complete libraries — the fastest way to a full system.",
+  },
+  {
+    id: "whs",
+    label: "WHS Templates & Forms",
+    icon: ClipboardCheck,
+    blurb: "Core WHS documents grouped by type. Every form comes with a matching editable Word template.",
+  },
+  {
+    id: "project",
+    label: "Project Management WHS",
+    icon: HardHat,
+    blurb: "Documents for planning and delivering projects safely, from mobilisation to close-out.",
+  },
+  {
+    id: "generic",
+    label: "Generic Toolbox Talks",
+    icon: MessagesSquare,
+    blurb: "Ready-to-run pre-start briefings covering hazards, PPE, wellbeing and site safety.",
+  },
+  {
+    id: "industry",
+    label: "Industry-Specific Toolbox Talks",
+    icon: Factory,
+    blurb: "Toolbox-talk sets tailored to your trade or sector.",
+  },
+  {
+    id: "leadership",
+    label: "Leadership Support Series",
+    icon: HeartHandshake,
+    blurb: "Guides that build the leadership habits driving WHS performance, framed on the biopsychosocial model.",
+  },
+]
+
+function FolderShell({
+  id,
+  label,
+  icon: Icon,
+  blurb,
+  count,
+  countLabel,
+  isOpen,
+  onToggle,
+  children,
 }: {
-  eyebrow?: string
-  title: string
-  subtitle?: string
+  id: FolderId
+  label: string
+  icon: typeof Folder
+  blurb: string
+  count: number
+  countLabel: string
+  isOpen: boolean
+  onToggle: () => void
+  children: React.ReactNode
 }) {
   return (
-    <div className="mb-8">
-      {eyebrow && (
-        <span className="text-xs font-bold uppercase tracking-[0.25em] text-terracotta">{eyebrow}</span>
-      )}
-      <h2 className="mt-2 font-heading text-2xl font-black tracking-tight text-foreground md:text-3xl">
-        {title}
+    <section id={id} className="scroll-mt-28 overflow-hidden rounded-2xl border border-border bg-card">
+      <h2>
+        <button
+          type="button"
+          onClick={onToggle}
+          aria-expanded={isOpen}
+          aria-controls={`${id}-body`}
+          className="flex w-full items-center gap-4 p-5 text-left transition-colors hover:bg-muted/60 md:p-6"
+        >
+          <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-primary text-primary-foreground">
+            {isOpen ? (
+              <FolderOpen className="h-6 w-6" aria-hidden="true" />
+            ) : (
+              <Icon className="h-6 w-6" aria-hidden="true" />
+            )}
+          </span>
+          <span className="min-w-0 flex-1">
+            <span className="flex flex-wrap items-center gap-x-3 gap-y-1">
+              <span className="font-heading text-lg font-black tracking-tight text-foreground md:text-xl">
+                {label}
+              </span>
+              <span className="inline-flex items-center rounded-full bg-secondary px-2.5 py-0.5 font-mono text-xs font-semibold text-secondary-foreground">
+                {count} {countLabel}
+              </span>
+            </span>
+            <span className="mt-1 block text-sm leading-relaxed text-muted-foreground">{blurb}</span>
+          </span>
+          <ChevronRight
+            className={`h-5 w-5 shrink-0 text-muted-foreground transition-transform ${
+              isOpen ? "rotate-90 text-terracotta" : ""
+            }`}
+            aria-hidden="true"
+          />
+        </button>
       </h2>
-      {subtitle && <p className="mt-2 text-sm text-muted-foreground">{subtitle}</p>}
-    </div>
+      {isOpen && (
+        <div id={`${id}-body`} className="border-t border-border p-5 md:p-6">
+          {children}
+        </div>
+      )}
+    </section>
   )
 }
 
 export function TemplatesCatalogue() {
   const [query, setQuery] = useState("")
-  const [category, setCategory] = useState<Category>("all")
+  const [manualOpen, setManualOpen] = useState<Set<FolderId>>(new Set(["bundles"]))
 
   const q = query.trim().toLowerCase()
 
-  const filterItems = (items: TemplateItem[]) =>
-    !q
-      ? items
-      : items.filter(
-          (i) =>
-            i.name.toLowerCase().includes(q) ||
-            i.code.toLowerCase().includes(q) ||
-            i.description.toLowerCase().includes(q),
-        )
+  const matchItem = (i: TemplateItem) =>
+    !q ||
+    i.name.toLowerCase().includes(q) ||
+    i.code.toLowerCase().includes(q) ||
+    i.description.toLowerCase().includes(q)
 
-  const filteredWhs = useMemo(() => filterItems(whsTemplates), [q])
-  const filteredProject = useMemo(() => filterItems(projectDocs), [q])
-  const filteredLeadership = useMemo(() => filterItems(leadershipGuides), [q])
-
-  // Group the filtered WHS templates into their sub-categories, preserving the
-  // ordered list defined in the catalogue so the index and sections align.
-  const whsGroups = useMemo(() => {
-    return whsSubcategories
-      .map((sub) => ({
-        ...sub,
-        items: filteredWhs.filter((i) => getWhsSubcategory(i.code) === sub.id),
-      }))
-      .filter((g) => g.items.length > 0)
-  }, [filteredWhs])
+  const filteredWhs = useMemo(() => whsTemplates.filter(matchItem), [q])
+  const filteredProject = useMemo(() => projectDocs.filter(matchItem), [q])
+  const filteredLeadership = useMemo(() => leadershipGuides.filter(matchItem), [q])
   const filteredBundles = useMemo(
     () =>
-      !q
-        ? bundles
-        : bundles.filter(
-            (b) =>
-              b.name.toLowerCase().includes(q) ||
-              b.code.toLowerCase().includes(q) ||
-              b.description.toLowerCase().includes(q),
-          ),
+      bundles.filter(
+        (b) =>
+          !q ||
+          b.name.toLowerCase().includes(q) ||
+          b.code.toLowerCase().includes(q) ||
+          b.description.toLowerCase().includes(q),
+      ),
     [q],
   )
   const filteredIndustry = useMemo(
     () =>
-      !q
-        ? industryBundles
-        : industryBundles.filter(
-            (b) => b.name.toLowerCase().includes(q) || b.code.toLowerCase().includes(q),
-          ),
+      industryBundles.filter(
+        (b) => !q || b.name.toLowerCase().includes(q) || b.code.toLowerCase().includes(q),
+      ),
     [q],
   )
+  const genericMatches = !q || "generic toolbox talks".includes(q) || "gtbt".includes(q)
 
-  const show = (cat: Category) => category === "all" || category === cat
+  const whsGroups = useMemo(
+    () =>
+      whsSubcategories
+        .map((sub) => ({
+          ...sub,
+          items: filteredWhs.filter((i) => getWhsSubcategory(i.code) === sub.id),
+        }))
+        .filter((g) => g.items.length > 0),
+    [filteredWhs],
+  )
 
-  const showBundles = show("bundles") && (filteredBundles.length > 0 || filteredIndustry.length > 0)
-  const showWhs = show("whs") && filteredWhs.length > 0
-  const showProject = show("project") && filteredProject.length > 0
-  const showLeadership = show("leadership") && filteredLeadership.length > 0
-  const nothing = !showBundles && !showWhs && !showProject && !showLeadership
+  // Which folders have results for the current query.
+  const hasResults: Record<FolderId, boolean> = {
+    bundles: filteredBundles.length > 0,
+    whs: filteredWhs.length > 0,
+    project: filteredProject.length > 0,
+    generic: genericMatches,
+    industry: filteredIndustry.length > 0,
+    leadership: filteredLeadership.length > 0,
+  }
+
+  const counts: Record<FolderId, number> = {
+    bundles: bundles.length,
+    whs: whsTemplates.length,
+    project: projectDocs.length,
+    generic: GENERIC_TOOLBOX_COUNT,
+    industry: industryBundles.length,
+    leadership: leadershipGuides.length,
+  }
+  const countLabels: Record<FolderId, string> = {
+    bundles: "packages",
+    whs: "forms",
+    project: "documents",
+    generic: "talks",
+    industry: "sets",
+    leadership: "guides",
+  }
+
+  const toggle = (id: FolderId) =>
+    setManualOpen((prev) => {
+      const next = new Set(prev)
+      if (next.has(id)) next.delete(id)
+      else next.add(id)
+      return next
+    })
+
+  // When searching, force-open every folder that has a match. Otherwise use
+  // the manual open/closed state the visitor has clicked into.
+  const isOpen = (id: FolderId) => (q ? hasResults[id] : manualOpen.has(id))
+
+  const visibleFolders = folderMeta.filter((f) => (q ? hasResults[f.id] : true))
+  const nothing = q && visibleFolders.length === 0
 
   return (
     <div>
@@ -230,132 +367,16 @@ export function TemplatesCatalogue() {
           <Lock className="mt-0.5 h-5 w-5 shrink-0 text-accent-foreground" aria-hidden="true" />
           <p className="text-sm leading-relaxed text-muted-foreground">
             <span className="font-semibold text-foreground">These templates are licensed products.</span>{" "}
-            Purchase securely online and download your files instantly. You&apos;ll receive the digital and
-            editable Word versions, ready to brand to your business. Licensed for use within your own
-            organisation only, not for resale or redistribution.
+            Purchase securely online and download your files instantly. You&apos;ll receive the digital form
+            and a matching editable Word version, ready to brand to your business. Licensed for use within
+            your own organisation only, not for resale or redistribution.
           </p>
         </div>
       </div>
 
-      {/* Catalogue index / table of contents */}
-      {!q && (
-        <nav
-          aria-label="Catalogue index"
-          className="mx-auto mt-8 max-w-7xl px-4 sm:px-6 lg:px-8"
-        >
-          <div className="rounded-2xl border border-border bg-card p-6 md:p-8">
-            <h2 className="font-heading text-lg font-black tracking-tight text-foreground">
-              Browse the catalogue
-            </h2>
-            <p className="mt-1 text-sm text-muted-foreground">
-              Jump straight to the section you need.
-            </p>
-            <div className="mt-6 grid gap-8 md:grid-cols-2 lg:grid-cols-4">
-              {/* WHS forms with sub-categories */}
-              <div>
-                <a
-                  href="#whs"
-                  className="group inline-flex items-center gap-1 font-heading text-sm font-bold text-foreground hover:text-terracotta"
-                >
-                  WHS Templates &amp; Forms
-                  <ChevronRight
-                    className="h-4 w-4 text-muted-foreground transition-transform group-hover:translate-x-0.5 group-hover:text-terracotta"
-                    aria-hidden="true"
-                  />
-                </a>
-                <ul className="mt-3 space-y-1.5">
-                  {whsSubcategories.map((sub) => {
-                    const count = whsTemplates.filter(
-                      (i) => getWhsSubcategory(i.code) === sub.id,
-                    ).length
-                    if (count === 0) return null
-                    return (
-                      <li key={sub.id}>
-                        <a
-                          href={`#whs-${sub.id}`}
-                          className="flex items-center justify-between gap-2 text-sm text-muted-foreground hover:text-foreground"
-                        >
-                          <span>{sub.label}</span>
-                          <span className="font-mono text-xs text-muted-foreground/70">{count}</span>
-                        </a>
-                      </li>
-                    )
-                  })}
-                </ul>
-              </div>
-
-              {/* Project Management WHS */}
-              <div>
-                <a
-                  href="#project"
-                  className="group inline-flex items-center gap-1 font-heading text-sm font-bold text-foreground hover:text-terracotta"
-                >
-                  Project Management WHS
-                  <ChevronRight
-                    className="h-4 w-4 text-muted-foreground transition-transform group-hover:translate-x-0.5 group-hover:text-terracotta"
-                    aria-hidden="true"
-                  />
-                </a>
-                <p className="mt-3 text-sm text-muted-foreground">
-                  {projectDocs.length} documents for planning and delivering projects safely.
-                </p>
-              </div>
-
-              {/* Toolbox Talks */}
-              <div>
-                <span className="font-heading text-sm font-bold text-foreground">Toolbox Talks</span>
-                <ul className="mt-3 space-y-1.5">
-                  <li>
-                    <a
-                      href="#bundles"
-                      className="text-sm text-muted-foreground hover:text-foreground"
-                    >
-                      Generic toolbox talks
-                    </a>
-                  </li>
-                  <li>
-                    <a
-                      href="#industry"
-                      className="text-sm text-muted-foreground hover:text-foreground"
-                    >
-                      Industry-specific
-                    </a>
-                  </li>
-                  <li>
-                    <a
-                      href="#leadership"
-                      className="text-sm text-muted-foreground hover:text-foreground"
-                    >
-                      Leadership support series
-                    </a>
-                  </li>
-                </ul>
-              </div>
-
-              {/* Bundles */}
-              <div>
-                <a
-                  href="#bundles"
-                  className="group inline-flex items-center gap-1 font-heading text-sm font-bold text-foreground hover:text-terracotta"
-                >
-                  Bundles &amp; Packages
-                  <ChevronRight
-                    className="h-4 w-4 text-muted-foreground transition-transform group-hover:translate-x-0.5 group-hover:text-terracotta"
-                    aria-hidden="true"
-                  />
-                </a>
-                <p className="mt-3 text-sm text-muted-foreground">
-                  Value-priced collections and complete libraries.
-                </p>
-              </div>
-            </div>
-          </div>
-        </nav>
-      )}
-
-      {/* Search + filters */}
+      {/* Search */}
       <div className="sticky top-[65px] z-30 mt-8 border-y border-border bg-background/95 backdrop-blur">
-        <div className="mx-auto flex max-w-7xl flex-col gap-3 px-4 py-4 sm:flex-row sm:items-center sm:px-6 lg:px-8">
+        <div className="mx-auto flex max-w-7xl items-center gap-3 px-4 py-4 sm:px-6 lg:px-8">
           <div className="relative flex-1">
             <Search
               className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground"
@@ -365,198 +386,222 @@ export function TemplatesCatalogue() {
               type="search"
               value={query}
               onChange={(e) => setQuery(e.target.value)}
-              placeholder="Search templates by name or code…"
+              placeholder="Search all folders by name or code…"
               aria-label="Search templates"
               className="w-full rounded-lg border border-input bg-card py-2.5 pl-10 pr-3 text-sm text-foreground outline-none transition-colors focus:border-ring focus:ring-2 focus:ring-ring/30"
             />
           </div>
-          <div className="flex flex-wrap gap-2">
-            {categories.map((c) => (
-              <button
-                key={c.id}
-                type="button"
-                onClick={() => setCategory(c.id)}
-                className={`rounded-lg px-4 py-2 text-sm font-semibold transition-colors ${
-                  category === c.id
-                    ? "bg-primary text-primary-foreground"
-                    : "bg-secondary text-secondary-foreground hover:bg-secondary/70"
-                }`}
-                aria-pressed={category === c.id}
-              >
-                {c.label}
-              </button>
-            ))}
-          </div>
+          {q && (
+            <button
+              type="button"
+              onClick={() => setQuery("")}
+              className="shrink-0 rounded-lg bg-secondary px-4 py-2 text-sm font-semibold text-secondary-foreground transition-colors hover:bg-secondary/70"
+            >
+              Clear
+            </button>
+          )}
         </div>
       </div>
 
-      <div className="mx-auto max-w-7xl space-y-20 px-4 py-16 sm:px-6 lg:px-8">
+      <div className="mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8">
+        <p className="mb-6 text-sm text-muted-foreground">
+          {q ? (
+            <>Showing folders with matches for &ldquo;{query}&rdquo;.</>
+          ) : (
+            <>Click a folder to open it and browse the forms and templates inside.</>
+          )}
+        </p>
+
         {nothing && (
           <p className="py-20 text-center text-muted-foreground">
             No templates match &ldquo;{query}&rdquo;. Try a different search.
           </p>
         )}
 
-        {/* Bundles */}
-        {showBundles && (
-          <section id="bundles" className="scroll-mt-28">
-            <div className="mb-8 flex items-start gap-4">
-              <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-terracotta text-terracotta-foreground">
-                <Package className="h-6 w-6" aria-hidden="true" />
-              </span>
-              <div>
-                <h2 className="font-heading text-2xl font-black tracking-tight text-foreground md:text-3xl">
-                  Bundles &amp; Packages
-                </h2>
-                <p className="mt-1 text-sm font-medium text-terracotta">
-                  Value-priced collections · best-value complete libraries
-                </p>
-                <p className="mt-2 max-w-2xl text-sm text-muted-foreground">
-                  Buy a complete, ready-to-brand collection instead of individual templates. Each bundle
-                  is licensed for use within your own organisation.
-                </p>
-              </div>
-            </div>
-
-            {filteredBundles.length > 0 && (
-              <div className="grid gap-5 md:grid-cols-2 lg:grid-cols-3">
-                {filteredBundles.map((b) => (
-                  <article
-                    key={b.code}
-                    className={`relative flex flex-col rounded-xl border p-6 ${
-                      b.bestValue
-                        ? "border-accent bg-primary text-primary-foreground"
-                        : "border-border bg-card"
-                    }`}
-                  >
-                    {b.bestValue && (
-                      <span className="mb-3 inline-flex w-fit items-center rounded-full bg-accent px-3 py-1 text-xs font-bold uppercase tracking-wide text-accent-foreground">
-                        Best Value
-                      </span>
-                    )}
-                    <h3
-                      className={`font-heading text-lg font-bold ${
-                        b.bestValue ? "text-primary-foreground" : "text-card-foreground"
-                      }`}
-                    >
-                      {b.name}
-                    </h3>
-                    <p
-                      className={`mt-1 font-mono text-xs ${
-                        b.bestValue ? "text-primary-foreground/70" : "text-muted-foreground"
-                      }`}
-                    >
-                      {b.code}
-                    </p>
-                    <p
-                      className={`mt-3 flex-1 text-sm leading-relaxed ${
-                        b.bestValue ? "text-primary-foreground/85" : "text-muted-foreground"
-                      }`}
-                    >
-                      {b.description}
-                    </p>
-                    <PriceLine code={b.code} invert={b.bestValue} />
-                    <div className="mt-5">
-                      <PurchaseCTA
-                        code={b.code}
-                        name={b.name}
-                        tone={b.bestValue ? "accent" : "terracotta"}
-                      />
-                    </div>
-                  </article>
-                ))}
-              </div>
-            )}
-
-            {filteredIndustry.length > 0 && (
-              <div id="industry" className="mt-10 scroll-mt-28">
-                <h3 className="font-heading text-lg font-bold text-foreground">
-                  Industry-Specific Toolbox Talk Bundles
-                </h3>
-                <p className="mt-1 text-sm text-muted-foreground">
-                  Tailored toolbox-talk sets for your trade or sector.
-                </p>
-                <div className="mt-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-                  {filteredIndustry.map((b) => (
+        <div className="space-y-4">
+          {visibleFolders.map((f) => (
+            <FolderShell
+              key={f.id}
+              id={f.id}
+              label={f.label}
+              icon={f.icon}
+              blurb={f.blurb}
+              count={counts[f.id]}
+              countLabel={countLabels[f.id]}
+              isOpen={isOpen(f.id)}
+              onToggle={() => toggle(f.id)}
+            >
+              {/* Bundles */}
+              {f.id === "bundles" && (
+                <div className="grid gap-5 md:grid-cols-2 lg:grid-cols-3">
+                  {filteredBundles.map((b) => (
                     <article
                       key={b.code}
-                      className="flex flex-col gap-3 rounded-lg border border-border bg-card px-4 py-4"
+                      className={`relative flex flex-col rounded-xl border p-6 ${
+                        b.bestValue
+                          ? "border-accent bg-primary text-primary-foreground"
+                          : "border-border bg-card"
+                      }`}
                     >
-                      <div>
-                        <span className="block text-sm font-semibold text-card-foreground">{b.name}</span>
-                        <span className="block font-mono text-xs text-muted-foreground">{b.code}</span>
+                      {b.bestValue && (
+                        <span className="mb-3 inline-flex w-fit items-center gap-1 rounded-full bg-accent px-3 py-1 text-xs font-bold uppercase tracking-wide text-accent-foreground">
+                          <Sparkles className="h-3 w-3" aria-hidden="true" />
+                          Best Value · Includes Solly AI
+                        </span>
+                      )}
+                      <h3
+                        className={`font-heading text-lg font-bold ${
+                          b.bestValue ? "text-primary-foreground" : "text-card-foreground"
+                        }`}
+                      >
+                        {b.name}
+                      </h3>
+                      <p
+                        className={`mt-1 font-mono text-xs ${
+                          b.bestValue ? "text-primary-foreground/70" : "text-muted-foreground"
+                        }`}
+                      >
+                        {b.code}
+                      </p>
+                      <p
+                        className={`mt-3 flex-1 text-sm leading-relaxed ${
+                          b.bestValue ? "text-primary-foreground/85" : "text-muted-foreground"
+                        }`}
+                      >
+                        {b.description}
+                      </p>
+                      <PriceLine code={b.code} invert={b.bestValue} />
+                      <div className="mt-5">
+                        <PurchaseCTA code={b.code} name={b.name} tone={b.bestValue ? "accent" : "terracotta"} />
                       </div>
-                      <PriceLine code={b.code} />
-                      <PurchaseCTA code={b.code} name={b.name} />
                     </article>
                   ))}
                 </div>
-              </div>
-            )}
-          </section>
-        )}
+              )}
 
-        {/* WHS templates, grouped by sub-category */}
-        {showWhs && (
-          <section id="whs" className="scroll-mt-28">
-            <SectionHeading
-              eyebrow="Core WHS"
-              title="WHS Templates & Forms"
-              subtitle={`${whsTemplates.length} licensed documents · digital + Word`}
-            />
-            <div className="space-y-14">
-              {whsGroups.map((group) => (
-                <div key={group.id} id={`whs-${group.id}`} className="scroll-mt-28">
-                  <div className="mb-6 flex items-center gap-3 border-b border-border pb-3">
-                    <h3 className="font-heading text-xl font-black tracking-tight text-foreground">
-                      {group.label}
-                    </h3>
-                    <span className="rounded-full bg-secondary px-2.5 py-0.5 font-mono text-xs font-semibold text-secondary-foreground">
-                      {group.items.length}
-                    </span>
-                  </div>
-                  <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
-                    {group.items.map((item) => (
-                      <TemplateCard key={item.code} item={item} />
+              {/* WHS — grouped by sub-category */}
+              {f.id === "whs" && (
+                <div className="space-y-12">
+                  {whsGroups.map((group) => (
+                    <div key={group.id} id={`whs-${group.id}`} className="scroll-mt-28">
+                      <div className="mb-5 flex items-center gap-3 border-b border-border pb-3">
+                        <h3 className="font-heading text-lg font-black tracking-tight text-foreground">
+                          {group.label}
+                        </h3>
+                        <span className="rounded-full bg-secondary px-2.5 py-0.5 font-mono text-xs font-semibold text-secondary-foreground">
+                          {group.items.length} forms
+                        </span>
+                      </div>
+                      <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+                        {group.items.map((item) => (
+                          <TemplateCard key={item.code} item={item} />
+                        ))}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {/* Project WHS */}
+              {f.id === "project" && (
+                <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+                  {filteredProject.map((item) => (
+                    <TemplateCard key={item.code} item={item} />
+                  ))}
+                </div>
+              )}
+
+              {/* Generic Toolbox Talks */}
+              {f.id === "generic" && (
+                <div className="grid gap-5 md:grid-cols-2 lg:grid-cols-3">
+                  {bundles
+                    .filter((b) => b.code === "GTBT-SSC-Bundle-001")
+                    .map((b) => (
+                      <article
+                        key={b.code}
+                        className="flex flex-col rounded-xl border border-border bg-card p-6"
+                      >
+                        <h3 className="font-heading text-lg font-bold text-card-foreground">{b.name}</h3>
+                        <p className="mt-1 font-mono text-xs text-muted-foreground">{b.code}</p>
+                        <p className="mt-3 flex-1 text-sm leading-relaxed text-muted-foreground">
+                          {b.description}
+                        </p>
+                        <PriceLine code={b.code} />
+                        <div className="mt-5">
+                          <PurchaseCTA code={b.code} name={b.name} />
+                        </div>
+                      </article>
                     ))}
+                  <div className="flex flex-col justify-center rounded-xl border border-dashed border-border bg-muted/40 p-6 text-sm leading-relaxed text-muted-foreground">
+                    <p>
+                      <span className="font-semibold text-foreground">{GENERIC_TOOLBOX_COUNT} talks</span>{" "}
+                      delivered as slides and documents for quick pre-start briefings. Included in the Solum
+                      WHS Package.
+                    </p>
                   </div>
                 </div>
-              ))}
-            </div>
-          </section>
-        )}
+              )}
 
-        {/* Project WHS */}
-        {showProject && (
-          <section id="project" className="scroll-mt-28">
-            <SectionHeading
-              eyebrow="Project Delivery"
-              title="Project Management WHS"
-              subtitle={`${projectDocs.length} licensed documents · digital + Word · for project managers`}
-            />
-            <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
-              {filteredProject.map((item) => (
-                <TemplateCard key={item.code} item={item} />
-              ))}
-            </div>
-          </section>
-        )}
+              {/* Industry-Specific Toolbox Talks */}
+              {f.id === "industry" && (
+                <>
+                  <p className="mb-5 rounded-lg border-l-4 border-accent bg-muted p-4 text-sm leading-relaxed text-muted-foreground">
+                    <span className="font-semibold text-foreground">Note:</span> Industry-specific toolbox
+                    talks are the one thing not included in the Solum WHS Package — purchase the sets you need
+                    below.
+                  </p>
+                  <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                    {filteredIndustry.map((b) => (
+                      <article
+                        key={b.code}
+                        className="flex flex-col gap-3 rounded-lg border border-border bg-card px-4 py-4"
+                      >
+                        <div>
+                          <span className="block text-sm font-semibold text-card-foreground">{b.name}</span>
+                          <span className="block font-mono text-xs text-muted-foreground">{b.code}</span>
+                        </div>
+                        <PriceLine code={b.code} />
+                        <PurchaseCTA code={b.code} name={b.name} />
+                      </article>
+                    ))}
+                  </div>
+                </>
+              )}
 
-        {/* Leadership */}
-        {showLeadership && (
-          <section id="leadership" className="scroll-mt-28">
-            <SectionHeading
-              eyebrow="Leadership Support Series"
-              title="Leadership Support Series"
-              subtitle={`${leadershipGuides.length} licensed guides · for managers & leaders · framed on the biopsychosocial model`}
-            />
-            <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
-              {filteredLeadership.map((item) => (
-                <TemplateCard key={item.code} item={item} />
-              ))}
-            </div>
-          </section>
-        )}
+              {/* Leadership — 5 featured + additional */}
+              {f.id === "leadership" && (
+                <div className="space-y-8">
+                  <div>
+                    <h3 className="mb-5 font-heading text-lg font-black tracking-tight text-foreground">
+                      Featured leadership toolboxes
+                    </h3>
+                    <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+                      {filteredLeadership.slice(0, LEADERSHIP_FEATURED).map((item) => (
+                        <TemplateCard key={item.code} item={item} />
+                      ))}
+                    </div>
+                  </div>
+
+                  {filteredLeadership.length > LEADERSHIP_FEATURED && (
+                    <div>
+                      <h3 className="mb-4 font-heading text-lg font-black tracking-tight text-foreground">
+                        Additional leadership toolboxes
+                        <span className="ml-2 inline-flex items-center rounded-full bg-secondary px-2.5 py-0.5 font-mono text-xs font-semibold text-secondary-foreground">
+                          {filteredLeadership.length - LEADERSHIP_FEATURED} more
+                        </span>
+                      </h3>
+                      <div className="grid gap-3">
+                        {filteredLeadership.slice(LEADERSHIP_FEATURED).map((item) => (
+                          <CompactRow key={item.code} item={item} />
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
+            </FolderShell>
+          ))}
+        </div>
       </div>
     </div>
   )

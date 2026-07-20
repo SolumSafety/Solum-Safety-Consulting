@@ -109,7 +109,6 @@ export async function POST(request: NextRequest) {
         )
       }
     }
-    }
 
     await supabaseAdmin
       .from("solly_conversations")

@@ -7,6 +7,8 @@ import { stripe } from "@/lib/stripe"
 import { getProduct } from "@/lib/products"
 import { decodeCodesFromMetadata } from "@/lib/checkout"
 import { SOLLY_PACKAGE_SKU } from "@/lib/solly-entitlement"
+import { getSupabaseAdmin } from "@/lib/supabase-admin"
+import { ToolboxTalkTranslator } from "@/components/toolbox-talk-translator"
 
 export const dynamic = "force-dynamic"
 
@@ -97,6 +99,21 @@ export default async function DownloadPage({
   const totalFiles = products.reduce((n, p) => n + (p?.files.length ?? 0), 0)
   const isSingle = products.length === 1
 
+  const TRANSLATABLE_BUNDLES = ["GTBT-SSC-Bundle-001"]
+  const hasTranslatableBundle = codes.some((c) => TRANSLATABLE_BUNDLES.includes(c))
+  let translatableTalks: { code: string; title: string }[] = []
+  if (hasTranslatableBundle) {
+    const supabaseAdmin = getSupabaseAdmin()
+    if (supabaseAdmin) {
+      const { data } = await supabaseAdmin
+        .from("toolbox_talks")
+        .select("code, title")
+        .in("bundle_code", TRANSLATABLE_BUNDLES)
+        .order("title")
+      translatableTalks = data ?? []
+    }
+  }
+
   return (
     <Shell>
       <div className="rounded-2xl border border-border bg-card p-8">
@@ -163,6 +180,10 @@ export default async function DownloadPage({
             </div>
           ))}
         </div>
+
+        {hasTranslatableBundle && translatableTalks.length > 0 && (
+          <ToolboxTalkTranslator sessionId={sessionId} talks={translatableTalks} />
+        )}
 
         <p className="mt-6 text-sm leading-relaxed text-muted-foreground">
           Having trouble? Email{" "}

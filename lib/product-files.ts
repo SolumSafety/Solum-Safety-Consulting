@@ -110,7 +110,7 @@ export const PRODUCT_FILES: Record<string, string[]> = {
   "SSC-WHS-RA-Office-001": ["products/whs/SSC-WHS-RA-Office-001/SSC-WHS-RA-Office-001_Office_Risk_Assessment.docx","products/whs/SSC-WHS-RA-Office-001/SSC-WHS-RA-Office-001_Office_Risk_Assessment.html"],
   "SSC-WHS-RA-PSY-001": ["products/whs/SSC-WHS-RA-PSY-001/SSC-WHS-RA-PSY-001_Psychosocial_Risk_Assessment.docx","products/whs/SSC-WHS-RA-PSY-001/SSC-WHS-RA-PSY-001_Psychosocial_Risk_Assessment.html"],
   "SSC-WHS-RCA-5WHY-003": ["products/whs/SSC-WHS-RCA-5WHY-003/SSC-WHS-RCA-5WHY-003_Why_Root_Cause_Analysis.docx","products/whs/SSC-WHS-RCA-5WHY-003/SSC-WHS-RCA-5WHY-003_Why_Root_Cause_Analysis.html"],
-  "SSC-WHS-RCA-CAR-001": ["products/whs/SSC-WHS-RCA-CAR-001/SSC-WHS-RCA-CAR-001_Corrective_Action_Tracking_Register.html"],
+  "SSC-WHS-RCA-CAR-001": ["products/whs/SSC-WHS-RCA-CAR-001/SSC-WHS-RCA-CAR-001_Corrective_Action_Tracking_Register.docx","products/whs/SSC-WHS-RCA-CAR-001/SSC-WHS-RCA-CAR-001_Corrective_Action_Tracking_Register.html"],
   "SSC-WHS-RCA-CAR-006": ["products/whs/SSC-WHS-RCA-CAR-006/SSC-WHS-RCA-CAR-006_Corrective_Action_Register.docx","products/whs/SSC-WHS-RCA-CAR-006/SSC-WHS-RCA-CAR-006_Corrective_Action_Register.html"],
   "SSC-WHS-RCA-FISH-005": ["products/whs/SSC-WHS-RCA-FISH-005/SSC-WHS-RCA-FISH-005_Fishbone__Ishikawa__Analysis.docx","products/whs/SSC-WHS-RCA-FISH-005/SSC-WHS-RCA-FISH-005_Fishbone__Ishikawa__Analysis.html"],
   "SSC-WHS-RCA-INC-001": ["products/whs/SSC-WHS-RCA-INC-001/SSC-WHS-RCA-INC-001_Incident_Investigation_Form.docx","products/whs/SSC-WHS-RCA-INC-001/SSC-WHS-RCA-INC-001_Incident_Investigation_Form.html"],

@@ -60,7 +60,11 @@ function PurchaseCTA({
     return (
       <div className="flex flex-col gap-2">
         <AddToCartButton code={code} name={name} priceInCents={product.priceInCents} tone={tone} />
-        <BuyButton code={code} price={formatPrice(product.priceInCents)} tone="ghost" />
+        <BuyButton
+          code={code}
+          price={formatPrice(product.priceInCents)}
+          tone={tone === "accent" ? "ghost-invert" : "ghost"}
+        />
       </div>
     )
   }

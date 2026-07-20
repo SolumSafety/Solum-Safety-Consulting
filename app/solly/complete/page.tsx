@@ -38,7 +38,8 @@ export default async function SollyCompletePage({
         <div className="mt-6 space-y-2 text-left">
           {sessions.length === 0 && (
             <p className="rounded-lg border border-[#E4DFD3] bg-[#FAFAF7] px-3 py-3 text-sm text-[#5A6472]">
-              Documents are still being unlocked. Refresh this page in a moment. If this persists, contact us and we can sort it out.
+              Documents are still being unlocked — refresh this page in a moment. If this persists, contact us and
+              we'll sort it out.
             </p>
           )}
           {sessions.map((s) => (
@@ -47,7 +48,7 @@ export default async function SollyCompletePage({
               className="flex items-center justify-between rounded-lg border border-[#E4DFD3] px-3 py-2.5 text-sm"
             >
               <span className="font-mono text-xs text-[#5A6472]">{s.form_code}</span>
-              
+              <a
                 href={`/api/solly/document/${s.id}`}
                 className="rounded-full bg-[#16294D] px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-[#18707F]"
               >

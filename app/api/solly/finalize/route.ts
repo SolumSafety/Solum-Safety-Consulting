@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from "next/server"
 import { headers } from "next/headers"
-import { Resend } from "resend"
 import { getSupabaseAdmin } from "@/lib/supabase-admin"
 import { stripe } from "@/lib/stripe"
 
@@ -10,36 +9,6 @@ async function getOrigin() {
     headersList.get("origin") ??
     (headersList.get("host") ? `https://${headersList.get("host")}` : "")
   )
-}
-
-async function notifyReviewerOfPendingDocuments(clientEmail: string, formCodes: string[]) {
-  const apiKey = process.env.RESEND_API_KEY
-  const to = process.env.CONTACT_TO_EMAIL?.trim() || "info@solumsafetyconsulting.com.au"
-  if (!apiKey) {
-    console.log("[solly] RESEND_API_KEY not set — skipping reviewer notification for", clientEmail, formCodes)
-    return
-  }
-  const configuredFrom = process.env.CONTACT_FROM_EMAIL?.trim()
-  const fromIsUnverified = !configuredFrom || /@(gmail|outlook|hotmail|yahoo|icloud)\.com>?\s*$/i.test(configuredFrom)
-  const from = fromIsUnverified ? "Solum Safety Consulting <onboarding@resend.dev>" : configuredFrom
-
-  const resend = new Resend(apiKey)
-  const origin = await getOrigin()
-  try {
-    await resend.emails.send({
-      from,
-      to,
-      subject: `Solly: ${formCodes.length} document${formCodes.length === 1 ? "" : "s"} awaiting review`,
-      html: `
-        <h2>Documents awaiting review</h2>
-        <p><strong>Client:</strong> ${clientEmail}</p>
-        <p><strong>Templates:</strong> ${formCodes.join(", ")}</p>
-        <p><a href="${origin}/solly/admin/review">Review now</a></p>
-      `,
-    })
-  } catch (err) {
-    console.log("[solly] Failed to send reviewer notification:", err instanceof Error ? err.message : err)
-  }
 }
 
 export async function POST(request: NextRequest) {
@@ -106,40 +75,35 @@ export async function POST(request: NextRequest) {
     }
 
     if (entitlement) {
-      const pending = []
+      const unlocked = []
       for (const session of sessions) {
-        if (session.status !== "delivered" && session.status !== "pending_review") {
+        if (session.status !== "delivered") {
           const { error: unlockError } = await supabaseAdmin
             .from("form_sessions")
             .update({
-              status: "pending_review",
+              status: "delivered",
               solly_entitlement_id: entitlement.id,
               updated_at: new Date().toISOString(),
             })
             .eq("id", session.id)
 
           if (unlockError) {
-            console.log("[solly] Failed to move session to review", session.id, unlockError.message)
+            console.log("[solly] Failed to unlock session", session.id, unlockError.message)
             continue
           }
         }
-        pending.push({ formCode: session.form_code, sessionId: session.id })
+        unlocked.push({ formCode: session.form_code, sessionId: session.id, finalHtml: session.final_html })
       }
 
       await supabaseAdmin
         .from("solly_conversations")
-        .update({ status: "ready_for_purchase", client_email: email, updated_at: new Date().toISOString() })
+        .update({ status: "completed", updated_at: new Date().toISOString() })
         .eq("id", conversationId)
 
-      await notifyReviewerOfPendingDocuments(email, pending.map((p) => p.formCode))
-
       return NextResponse.json({
-        unlocked: false,
-        pendingReview: true,
+        unlocked: true,
         method: "entitlement",
-        documents: pending,
-        message:
-          "Your documents are being reviewed by our WHS team before delivery. You'll receive an email once they're ready — usually within one business day.",
+        documents: unlocked,
       })
     }
 

@@ -24,6 +24,7 @@ export default async function BlogAdminPage({
           method="POST"
           className="w-full max-w-sm rounded-2xl border border-[#E4DFD3] bg-white p-8"
         >
+          <input type="hidden" name="redirect" value="/blog/admin" />
           <h1 className="text-lg font-semibold text-[#16294D]">Blog Admin</h1>
           <p className="mt-1 text-sm text-[#5A6472]">Enter the access key to continue.</p>
           {error === "wrong_key" && <p className="mt-3 text-sm text-red-600">Incorrect key.</p>}

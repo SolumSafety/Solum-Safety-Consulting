@@ -58,6 +58,47 @@ export default function SollyChat({ clientEmail: initialEmail }: { clientEmail?:
   const [busy, setBusy] = useState(false)
   const [errorMsg, setErrorMsg] = useState<string | null>(null)
   const [bundleUpsell, setBundleUpsell] = useState<string | null>(null)
+  const [bypassKey, setBypassKey] = useState<string | null>(null)
+  const [showBuyCredits, setShowBuyCredits] = useState(false)
+  const [buyingCredits, setBuyingCredits] = useState(false)
+
+  // Owner-only rate limit bypass: visit /solly?key=YOUR_KEY once, it's
+  // remembered locally after that. Never shown or exposed to other clients.
+  // Owner-only rate limit bypass: visit /solly?key=YOUR_KEY once, it's
+  // remembered locally after that. Never shown or exposed to other clients.
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search)
+    const fromUrl = params.get("key")
+    if (fromUrl) {
+      localStorage.setItem("solly_bypass_key", fromUrl)
+      setBypassKey(fromUrl)
+      params.delete("key")
+      const cleanUrl = window.location.pathname + (params.toString() ? `?${params}` : "")
+      window.history.replaceState({}, "", cleanUrl)
+    } else {
+      const stored = localStorage.getItem("solly_bypass_key")
+      if (stored) setBypassKey(stored)
+    }
+  }, [])
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search)
+    const creditsResult = params.get("credits")
+    if (creditsResult === "granted") {
+      setMessages((m) => [
+        ...m,
+        { role: "assistant", content: "Your 10 extra drafts have been added to your account. You're all set to continue." },
+      ])
+      setShowBuyCredits(false)
+      params.delete("credits")
+      const cleanUrl = window.location.pathname + (params.toString() ? `?${params}` : "")
+      window.history.replaceState({}, "", cleanUrl)
+    } else if (creditsResult === "error" || creditsResult === "unpaid") {
+      setErrorMsg("We couldn't confirm that payment. If you were charged, contact us and we'll sort it out.")
+      params.delete("credits")
+      window.history.replaceState({}, "", window.location.pathname)
+    }
+  }, [])
 
   const scrollRef = useRef<HTMLDivElement>(null)
 
@@ -76,7 +117,10 @@ export default function SollyChat({ clientEmail: initialEmail }: { clientEmail?:
     try {
       const res = await fetch("/api/solly/chat", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          ...(bypassKey ? { "x-solly-bypass": bypassKey } : {}),
+        },
         body: JSON.stringify({ conversationId, message: text, clientEmail: email || undefined }),
       })
       const data = await res.json()
@@ -122,11 +166,17 @@ export default function SollyChat({ clientEmail: initialEmail }: { clientEmail?:
 
       const draftRes = await fetch("/api/solly/draft", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ conversationId }),
+        headers: {
+          "Content-Type": "application/json",
+          ...(bypassKey ? { "x-solly-bypass": bypassKey } : {}),
+        },
+        body: JSON.stringify({ conversationId, email: email || undefined }),
       })
       const draftData = await draftRes.json()
-      if (!draftRes.ok) throw new Error(draftData.error ?? "Solly could not complete the draft.")
+      if (!draftRes.ok) {
+        if (draftData.rateLimited) setShowBuyCredits(true)
+        throw new Error(draftData.error ?? "Solly could not complete the draft.")
+      }
 
       setDrafts(draftData.drafts ?? [])
       setActiveDraftCode(draftData.drafts?.[0]?.formCode ?? null)
@@ -171,6 +221,29 @@ export default function SollyChat({ clientEmail: initialEmail }: { clientEmail?:
       setErrorMsg(err instanceof Error ? err.message : "Something went wrong.")
     } finally {
       setBusy(false)
+    }
+  }
+
+  async function buyCredits() {
+    if (!email) {
+      setErrorMsg("Enter your email above so we know whose account to credit.")
+      return
+    }
+    setBuyingCredits(true)
+    setErrorMsg(null)
+    try {
+      const res = await fetch("/api/solly/credits/checkout", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email }),
+      })
+      const data = await res.json()
+      if (!res.ok) throw new Error(data.error ?? "Could not start checkout.")
+      window.location.href = data.checkoutUrl
+    } catch (err) {
+      setErrorMsg(err instanceof Error ? err.message : "Something went wrong.")
+    } finally {
+      setBuyingCredits(false)
     }
   }
 
@@ -235,6 +308,31 @@ export default function SollyChat({ clientEmail: initialEmail }: { clientEmail?:
 
         {errorMsg && (
           <p className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">{errorMsg}</p>
+        )}
+
+        {showBuyCredits && (
+          <div className="rounded-xl border border-[#C9A84C]/40 bg-[#C9A84C]/10 p-4">
+            <p className="text-sm font-semibold text-[#16294D]">Reached the free draft limit for now</p>
+            <p className="mt-1 text-sm text-[#5A6472]">
+              You can wait for the limit to reset, or get 10 extra drafts for $10.
+            </p>
+            <div className="mt-3 flex flex-col gap-2 sm:flex-row">
+              <input
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder="you@company.com.au"
+                className="flex-1 rounded-full border border-[#E4DFD3] px-4 py-2 text-sm outline-none focus:border-[#18707F] focus:ring-2 focus:ring-[#18707F]/20"
+              />
+              <button
+                onClick={buyCredits}
+                disabled={buyingCredits || !email}
+                className="rounded-full bg-[#C9A84C] px-4 py-2 text-sm font-semibold text-[#16294D] transition hover:brightness-95 disabled:opacity-40"
+              >
+                {buyingCredits ? "Starting checkout…" : "Get 10 more drafts — $10"}
+              </button>
+            </div>
+          </div>
         )}
       </div>
 

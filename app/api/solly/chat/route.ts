@@ -74,21 +74,53 @@ export async function POST(request: NextRequest) {
       max_tokens: 1000,
       system: `${SOLLY_INTAKE_SYSTEM_PROMPT}\n\n${catalogueContext}`,
       messages: transcript.map((t) => ({ role: t.role, content: t.content })),
+      tools: [
+        {
+          name: "respond_to_client",
+          description:
+            "Send your reply to the client. Use type='question' while still gathering information, or type='recommendation' once you have enough detail to propose specific templates.",
+          input_schema: {
+            type: "object",
+            properties: {
+              type: { type: "string", enum: ["question", "recommendation"] },
+              message: {
+                type: "string",
+                description: "The natural, conversational reply shown directly to the client. No markdown code fences, no JSON.",
+              },
+              codes: {
+                type: "array",
+                items: { type: "string" },
+                description: "Only when type='recommendation': the exact template codes from AVAILABLE TEMPLATES being proposed.",
+              },
+            },
+            required: ["type", "message"],
+          },
+        },
+      ],
+      tool_choice: { type: "tool", name: "respond_to_client" },
     })
 
-    const rawText = claudeResponse.content
-      .filter((block): block is { type: "text"; text: string } => block.type === "text")
-      .map((block) => block.text)
-      .join("\n")
-      .trim()
+    const toolUse = claudeResponse.content.find(
+      (block): block is { type: "tool_use"; input: Record<string, unknown> } => block.type === "tool_use",
+    )
 
     let parsed: IntakeReply
-    try {
-      parsed = JSON.parse(rawText)
-    } catch {
-      // Fall back to treating it as a plain question if Solly didn't return
-      // clean JSON — better to show something than to error out on the client.
-      parsed = { type: "question", message: rawText }
+    if (toolUse && typeof toolUse.input.message === "string") {
+      const input = toolUse.input
+      if (input.type === "recommendation" && Array.isArray(input.codes)) {
+        parsed = { type: "recommendation", message: input.message as string, codes: input.codes as string[] }
+      } else {
+        parsed = { type: "question", message: input.message as string }
+      }
+    } else {
+      // Extremely unlikely with a forced tool call, but never leave the
+      // client with nothing — fall back to any text block Claude produced.
+      const rawText = claudeResponse.content
+        .filter((block): block is { type: "text"; text: string } => block.type === "text")
+        .map((block) => block.text)
+        .join("\n")
+        .trim()
+      parsed = { type: "question", message: rawText || "Sorry, I had trouble responding. Could you try rephrasing that?" }
     }
 
     transcript.push({ role: "assistant", content: parsed.message })

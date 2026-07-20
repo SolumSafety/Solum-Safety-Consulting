@@ -1,6 +1,36 @@
 import { NextRequest, NextResponse } from "next/server"
+import { Resend } from "resend"
 import { getSupabaseAdmin } from "@/lib/supabase-admin"
 import { stripe } from "@/lib/stripe"
+
+async function notifyReviewerOfPendingDocuments(clientEmail: string, formCodes: string[], origin: string) {
+  const apiKey = process.env.RESEND_API_KEY
+  const to = process.env.CONTACT_TO_EMAIL?.trim() || "info@solumsafetyconsulting.com.au"
+  if (!apiKey) {
+    console.log("[solly] RESEND_API_KEY not set — skipping reviewer notification for", clientEmail, formCodes)
+    return
+  }
+  const configuredFrom = process.env.CONTACT_FROM_EMAIL?.trim()
+  const fromIsUnverified = !configuredFrom || /@(gmail|outlook|hotmail|yahoo|icloud)\.com>?\s*$/i.test(configuredFrom)
+  const from = fromIsUnverified ? "Solum Safety Consulting <onboarding@resend.dev>" : configuredFrom
+
+  const resend = new Resend(apiKey)
+  try {
+    await resend.emails.send({
+      from,
+      to,
+      subject: `Solly: ${formCodes.length} paid document${formCodes.length === 1 ? "" : "s"} awaiting review`,
+      html: `
+        <h2>Paid documents awaiting review</h2>
+        <p><strong>Client:</strong> ${clientEmail}</p>
+        <p><strong>Templates:</strong> ${formCodes.join(", ")}</p>
+        <p><a href="${origin}/solly/admin/review">Review now</a></p>
+      `,
+    })
+  } catch (err) {
+    console.log("[solly] Failed to send reviewer notification:", err instanceof Error ? err.message : err)
+  }
+}
 
 export async function GET(request: NextRequest) {
   const sessionId = request.nextUrl.searchParams.get("session_id")
@@ -75,14 +105,14 @@ export async function GET(request: NextRequest) {
       const { error: unlockError } = await supabaseAdmin
         .from("form_sessions")
         .update({
-          status: "delivered",
+          status: "pending_review",
           form_purchase_id: purchase?.id ?? null,
           updated_at: new Date().toISOString(),
         })
         .eq("id", formSession.id)
 
       if (unlockError) {
-        console.log("[solly] Failed to unlock", code, unlockError.message)
+        console.log("[solly] Failed to move", code, "to review:", unlockError.message)
         continue
       }
 
@@ -91,8 +121,12 @@ export async function GET(request: NextRequest) {
 
     await supabaseAdmin
       .from("solly_conversations")
-      .update({ status: "completed", client_email: email, updated_at: new Date().toISOString() })
+      .update({ status: "ready_for_purchase", client_email: email, updated_at: new Date().toISOString() })
       .eq("id", conversationId)
+
+    if (email && unlocked.length > 0) {
+      await notifyReviewerOfPendingDocuments(email, unlocked.map((u) => u.formCode), request.nextUrl.origin)
+    }
 
     // Same-site redirect — no separate app origin needed.
     const origin = request.nextUrl.origin

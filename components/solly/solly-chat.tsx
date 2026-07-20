@@ -43,7 +43,7 @@ export default function SollyChat({ clientEmail: initialEmail }: { clientEmail?:
     {
       role: "assistant",
       content:
-        "Hi, I'm Solly — the Solum Safety Consulting WHS Agent. Tell me a bit about your site or situation and I'll help work out which forms you need, then draft them with you.\n\nNote: I can help you find and complete WHS templates and forms, but I don't run full WHS gap analyses — that's a separate service. Just ask if you'd like details on that instead.",
+        "Hi, I'm Solly — the Solum Safety Consulting WHS Agent. Tell me a bit about your site or situation and I'll help work out which forms you need, then draft them with you.\n\nA quick note: I'm an AI assistant, not a WHS professional. My drafts should be reviewed and adapted to your site before use, and they don't replace legal advice. I also don't run full WHS gap analyses — that's a separate service. Just ask if you'd like details on that instead.",
     },
   ])
   const [input, setInput] = useState("")
@@ -189,6 +189,11 @@ export default function SollyChat({ clientEmail: initialEmail }: { clientEmail?:
         </div>
         <StatusStamp phase={phase} />
       </div>
+
+      <p className="border-b border-[#E4DFD3] bg-white px-5 py-2 text-center text-[11px] leading-snug text-[#9CA3AF]">
+        Solly is an AI assistant. Documents are drafted based on your responses and should be reviewed before use.
+        They do not constitute legal advice.
+      </p>
 
       {/* Message list */}
       <div ref={scrollRef} className="flex-1 space-y-4 overflow-y-auto px-5 py-5">

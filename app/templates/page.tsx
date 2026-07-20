@@ -5,7 +5,7 @@ import { ChevronLeft } from "lucide-react"
 import { SiteHeader } from "@/components/site-header"
 import { SiteFooter } from "@/components/site-footer"
 import { TemplatesCatalogue } from "@/components/templates-catalogue"
-import { whsTemplates } from "@/lib/catalogue"
+import { whsTemplates, projectDocs, industryBundles, leadershipGuides } from "@/lib/catalogue"
 
 export const metadata: Metadata = {
   title: "WHS Templates & Resources Catalogue | Solum Safety Consulting",
@@ -62,9 +62,21 @@ export default function TemplatesPage() {
               business, practical and compliant.
             </p>
 
-            <div className="mt-8 flex items-baseline gap-3">
-              <span className="font-heading text-4xl font-black text-accent">{whsTemplates.length}</span>
-              <span className="text-sm text-primary-foreground/80">WHS templates</span>
+            <div className="mt-10 flex flex-wrap gap-x-10 gap-y-6">
+              {[
+                { count: whsTemplates.length, label: "WHS templates & forms" },
+                { count: projectDocs.length, label: "Project management documents" },
+                { count: 68, label: "Generic toolbox talks" },
+                { count: industryBundles.length, label: "Industry-specific toolbox sets" },
+                { count: leadershipGuides.length, label: "Leadership guides" },
+              ].map((stat) => (
+                <div key={stat.label} className="flex items-baseline gap-2">
+                  <span className="font-heading text-4xl font-black text-accent">{stat.count}</span>
+                  <span className="max-w-[8rem] text-sm leading-tight text-primary-foreground/80">
+                    {stat.label}
+                  </span>
+                </div>
+              ))}
             </div>
           </div>
         </section>

@@ -6,7 +6,7 @@ import type Stripe from "stripe"
 import { stripe } from "@/lib/stripe"
 import { getProduct, isPurchasable } from "@/lib/products"
 import { encodeCodesToMetadata } from "@/lib/checkout"
-import { validatePromo } from "@/lib/promo"
+import { validatePromo, resolveCouponId } from "@/lib/promo"
 
 export type CheckoutResult = { url: string } | { error: string }
 
@@ -48,7 +48,9 @@ export async function startCheckout(
   if (promoCode && promoCode.trim()) {
     const promo = validatePromo(promoCode)
     if (!promo.valid) return { error: promo.error }
-    discounts = [{ coupon: promo.couponId }]
+    const couponId = await resolveCouponId(stripe, promo)
+    if (!couponId) return { error: "That promo code isn't valid." }
+    discounts = [{ coupon: couponId }]
   }
 
   const origin = await getOrigin()
@@ -116,7 +118,9 @@ export async function startCartCheckout(
   if (promoCode && promoCode.trim()) {
     const promo = validatePromo(promoCode)
     if (!promo.valid) return { error: promo.error }
-    discounts = [{ coupon: promo.couponId }]
+    const couponId = await resolveCouponId(stripe, promo)
+    if (!couponId) return { error: "That promo code isn't valid." }
+    discounts = [{ coupon: couponId }]
   }
 
   const lineItems: Stripe.Checkout.SessionCreateParams.LineItem[] = []

@@ -3,12 +3,13 @@ import { getSupabaseAdmin } from "@/lib/supabase-admin"
 import { anthropic, SOLLY_MODEL } from "@/lib/solly/anthropic-client"
 import { SOLLY_INTAKE_SYSTEM_PROMPT } from "@/lib/solly/prompts"
 import { checkRateLimit, getClientIdentifier } from "@/lib/solly/rate-limit"
+import { bundles, industryBundles } from "@/lib/catalogue"
 
 type ChatTurn = { role: "user" | "assistant"; content: string }
 
 type IntakeReply =
   | { type: "question"; message: string }
-  | { type: "recommendation"; message: string; codes: string[] }
+  | { type: "recommendation"; message: string; codes: string[]; packageCodes: string[] }
 
 export async function POST(request: NextRequest) {
   try {
@@ -23,6 +24,7 @@ export async function POST(request: NextRequest) {
       route: "chat",
       maxRequests: 20,
       windowMinutes: 60,
+      bypassKey: request.headers.get("x-solly-bypass"),
     })
     if (!rateLimit.allowed) {
       return NextResponse.json(
@@ -71,22 +73,33 @@ export async function POST(request: NextRequest) {
 
     // Pull lightweight metadata only (not full html_content) to keep the
     // prompt small — Solly just needs to know what's available to recommend.
+    // Only WHS/Project Management categories are individually draftable —
+    // everything else (toolbox talks, leadership, industry sets) is sold
+    // as a complete package and only ever recommended, never drafted.
     const { data: forms, error: formsError } = await supabaseAdmin
       .from("forms_library")
       .select("code, title, category, subcategory, applicable_jurisdictions, applicable_legislation")
       .eq("is_active", true)
+      .in("category", ["WHS", "Project Management"])
 
     if (formsError) {
       return NextResponse.json({ error: "Could not load template library." }, { status: 500 })
     }
 
-    const catalogueContext = `AVAILABLE TEMPLATES:\n${(forms ?? [])
+    const draftableContext = `DRAFTABLE FORMS (Solly can complete these directly):\n${(forms ?? [])
       .map((f) => {
         const jurisdictions = (f.applicable_jurisdictions ?? ["ALL"]).join("/")
         const legislation = f.applicable_legislation ? ` [Legal basis: ${f.applicable_legislation}]` : ""
         return `${f.code} — ${f.title} (${f.category}${f.subcategory ? " / " + f.subcategory : ""}) [Jurisdiction: ${jurisdictions}]${legislation}`
       })
       .join("\n")}`
+
+    const packageContext = `PACKAGES (recommend purchasing these — Solly does NOT draft individual items from these, they're sold as one complete set):\n${[
+      ...bundles.map((b) => `${b.code} — ${b.name}: ${b.description}`),
+      ...industryBundles.map((i) => `${i.code} — ${i.name} industry-specific toolbox talk set`),
+    ].join("\n")}`
+
+    const catalogueContext = `${draftableContext}\n\n${packageContext}`
 
     const claudeResponse = await anthropic.messages.create({
       model: SOLLY_MODEL,
@@ -97,7 +110,7 @@ export async function POST(request: NextRequest) {
         {
           name: "respond_to_client",
           description:
-            "Send your reply to the client. Use type='question' while still gathering information, or type='recommendation' once you have enough detail to propose specific templates.",
+            "Send your reply to the client. Use type='question' while still gathering information, or type='recommendation' once you have enough detail to propose specific items.",
           input_schema: {
             type: "object",
             properties: {
@@ -109,7 +122,12 @@ export async function POST(request: NextRequest) {
               codes: {
                 type: "array",
                 items: { type: "string" },
-                description: "Only when type='recommendation': the exact template codes from AVAILABLE TEMPLATES being proposed.",
+                description: "Only when type='recommendation': exact codes from DRAFTABLE FORMS that Solly will draft with the client. Never put a PACKAGES code here.",
+              },
+              packageCodes: {
+                type: "array",
+                items: { type: "string" },
+                description: "Only when type='recommendation': exact codes from PACKAGES the client should purchase directly (toolbox talks, leadership guides, industry-specific sets, bundles). Never put a DRAFTABLE FORMS code here.",
               },
             },
             required: ["type", "message"],
@@ -126,8 +144,13 @@ export async function POST(request: NextRequest) {
     let parsed: IntakeReply
     if (toolUse && typeof toolUse.input.message === "string") {
       const input = toolUse.input
-      if (input.type === "recommendation" && Array.isArray(input.codes)) {
-        parsed = { type: "recommendation", message: input.message as string, codes: input.codes as string[] }
+      if (input.type === "recommendation") {
+        parsed = {
+          type: "recommendation",
+          message: input.message as string,
+          codes: Array.isArray(input.codes) ? (input.codes as string[]) : [],
+          packageCodes: Array.isArray(input.packageCodes) ? (input.packageCodes as string[]) : [],
+        }
       } else {
         parsed = { type: "question", message: input.message as string }
       }
@@ -149,11 +172,16 @@ export async function POST(request: NextRequest) {
       updated_at: new Date().toISOString(),
     }
 
+    let validPackageCodes: string[] = []
     if (parsed.type === "recommendation") {
       // Only keep codes that actually exist in the library.
       const validCodes = new Set((forms ?? []).map((f) => f.code))
       const codes = parsed.codes.filter((c) => validCodes.has(c))
       updates.recommended_form_codes = codes
+
+      const knownPackageCodes = new Set([...bundles.map((b) => b.code), ...industryBundles.map((i) => i.code)])
+      validPackageCodes = parsed.packageCodes.filter((c) => knownPackageCodes.has(c))
+
       updates.status = "recommended"
     }
 
@@ -171,6 +199,14 @@ export async function POST(request: NextRequest) {
       reply: parsed.message,
       type: parsed.type,
       recommendedCodes: parsed.type === "recommendation" ? updates.recommended_form_codes : undefined,
+      recommendedPackages:
+        parsed.type === "recommendation"
+          ? validPackageCodes.map((code) => {
+              const bundle = bundles.find((b) => b.code === code)
+              const industry = industryBundles.find((i) => i.code === code)
+              return { code, name: bundle?.name ?? industry?.name ?? code }
+            })
+          : undefined,
     })
   } catch (err) {
     console.log("[solly] Chat error:", err instanceof Error ? err.message : err)

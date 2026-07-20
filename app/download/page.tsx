@@ -6,6 +6,7 @@ import { SiteFooter } from "@/components/site-footer"
 import { stripe } from "@/lib/stripe"
 import { getProduct } from "@/lib/products"
 import { decodeCodesFromMetadata } from "@/lib/checkout"
+import { SOLLY_PACKAGE_SKU } from "@/lib/solly-entitlement"
 
 export const dynamic = "force-dynamic"
 
@@ -121,6 +122,22 @@ export default async function DownloadPage({
           is available below for the next 7 days.
         </p>
 
+        {codes.includes(SOLLY_PACKAGE_SKU) && (
+          <div className="mt-6 rounded-xl border border-[#C9A84C]/40 bg-[#C9A84C]/10 p-5">
+            <p className="font-heading text-sm font-bold text-[#16294D]">Your SolumWHS package includes Solly</p>
+            <p className="mt-1.5 text-sm leading-relaxed text-muted-foreground">
+              You now have free, unlimited access to Solly, our AI WHS Agent. Tell Solly about your site and
+              it will help identify and draft any of your WHS forms, at no extra cost.
+            </p>
+            <Link
+              href="/solly"
+              className="mt-3 inline-flex items-center justify-center rounded-lg bg-[#16294D] px-5 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-[#18707F]"
+            >
+              Talk to Solly
+            </Link>
+          </div>
+        )}
+
         <div className="mt-6 space-y-6">
           {products.map((p) => (
             <div key={p!.code}>
@@ -132,7 +149,7 @@ export default async function DownloadPage({
                   const filename = file.split("/").pop() || "Download"
                   return (
                     <li key={file}>
-                      <a
+                      
                         href={`/api/download?session_id=${encodeURIComponent(sessionId)}&file=${encodeURIComponent(file)}`}
                         className="flex items-center justify-between gap-4 rounded-xl border border-border bg-background px-5 py-4 transition-colors hover:border-primary hover:bg-secondary/50"
                       >

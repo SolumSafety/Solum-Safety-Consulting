@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server"
 import { getSupabaseAdmin } from "@/lib/supabase-admin"
 import { anthropic, SOLLY_MODEL } from "@/lib/solly/anthropic-client"
 import { SOLLY_DRAFT_SYSTEM_PROMPT } from "@/lib/solly/prompts"
+import { checkRateLimit, getClientIdentifier } from "@/lib/solly/rate-limit"
 
 function applyWatermark(html: string): string {
   const watermarkStyle = `
@@ -42,6 +43,20 @@ export async function POST(request: NextRequest) {
     const supabaseAdmin = getSupabaseAdmin()
     if (!supabaseAdmin) {
       return NextResponse.json({ error: "Solly is temporarily unavailable. Please try again shortly." }, { status: 503 })
+    }
+
+    const identifier = getClientIdentifier(request)
+    const rateLimit = await checkRateLimit({
+      identifier,
+      route: "draft",
+      maxRequests: 8,
+      windowMinutes: 60,
+    })
+    if (!rateLimit.allowed) {
+      return NextResponse.json(
+        { error: "You've requested a lot of drafts recently. Please wait a bit before trying again." },
+        { status: 429 },
+      )
     }
 
     const { conversationId } = (await request.json()) as { conversationId: string }

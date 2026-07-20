@@ -58,7 +58,7 @@ export async function POST(request: NextRequest) {
     // prompt small — Solly just needs to know what's available to recommend.
     const { data: forms, error: formsError } = await supabaseAdmin
       .from("forms_library")
-      .select("code, title, category, subcategory")
+      .select("code, title, category, subcategory, applicable_jurisdictions, applicable_legislation")
       .eq("is_active", true)
 
     if (formsError) {
@@ -66,7 +66,11 @@ export async function POST(request: NextRequest) {
     }
 
     const catalogueContext = `AVAILABLE TEMPLATES:\n${(forms ?? [])
-      .map((f) => `${f.code} — ${f.title} (${f.category}${f.subcategory ? " / " + f.subcategory : ""})`)
+      .map((f) => {
+        const jurisdictions = (f.applicable_jurisdictions ?? ["ALL"]).join("/")
+        const legislation = f.applicable_legislation ? ` [Legal basis: ${f.applicable_legislation}]` : ""
+        return `${f.code} — ${f.title} (${f.category}${f.subcategory ? " / " + f.subcategory : ""}) [Jurisdiction: ${jurisdictions}]${legislation}`
+      })
       .join("\n")}`
 
     const claudeResponse = await anthropic.messages.create({

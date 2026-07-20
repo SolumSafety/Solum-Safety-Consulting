@@ -63,6 +63,10 @@ export function SiteFooter() {
         <div className="mt-14 flex flex-col gap-4 border-t border-primary-foreground/15 pt-6 sm:flex-row sm:items-center sm:justify-between">
           <p className="text-xs text-primary-foreground/60">
             &copy; {new Date().getFullYear()} {site.name} <span className="mx-1">·</span> ABN 5493 2321 683
+            <span className="mx-1">·</span>
+            <Link href="/blog/admin" className="hover:text-primary-foreground/80">
+              Admin
+            </Link>
           </p>
           <ul className="flex flex-wrap gap-x-5 gap-y-2">
             {footerLegal.map((item) => (

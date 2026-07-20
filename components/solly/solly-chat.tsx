@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react"
 import Image from "next/image"
-import { Send, FileCheck2, Lock, Unlock, Loader2, ShieldCheck, ShoppingBag } from "lucide-react"
+import { Send, FileCheck2, Lock, Unlock, Loader2, ShieldCheck, ShoppingBag, Camera, Mic, MicOff, AlertTriangle } from "lucide-react"
 
 // ---------------------------------------------------------------------------
 // Solly — the WHS Agent chat interface.
@@ -62,6 +62,12 @@ export default function SollyChat({ clientEmail: initialEmail }: { clientEmail?:
   const [bypassKey, setBypassKey] = useState<string | null>(null)
   const [showBuyCredits, setShowBuyCredits] = useState(false)
   const [buyingCredits, setBuyingCredits] = useState(false)
+  const [analyzingPhoto, setAnalyzingPhoto] = useState(false)
+  const [hazardResults, setHazardResults] = useState<{ description: string; severity: "low" | "medium" | "high" }[] | null>(null)
+  const [isListening, setIsListening] = useState(false)
+  const [voiceSupported, setVoiceSupported] = useState(false)
+  const fileInputRef = useRef<HTMLInputElement>(null)
+  const recognitionRef = useRef<any>(null)
 
   // Owner-only rate limit bypass: visit /solly?key=YOUR_KEY once, it's
   // remembered locally after that. Never shown or exposed to other clients.
@@ -106,6 +112,86 @@ export default function SollyChat({ clientEmail: initialEmail }: { clientEmail?:
   useEffect(() => {
     scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: "smooth" })
   }, [messages, phase])
+
+  // Web Speech API — Chrome/Edge/most Android browsers support this; Safari
+  // has partial support, Firefox doesn't. The mic button only appears if
+  // the browser actually supports it, rather than showing a broken button.
+  useEffect(() => {
+    const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition
+    setVoiceSupported(!!SpeechRecognition)
+  }, [])
+
+  function toggleVoiceInput() {
+    const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition
+    if (!SpeechRecognition) return
+
+    if (isListening) {
+      recognitionRef.current?.stop()
+      return
+    }
+
+    const recognition = new SpeechRecognition()
+    recognition.lang = "en-AU"
+    recognition.interimResults = false
+    recognition.maxAlternatives = 1
+
+    recognition.onresult = (event: any) => {
+      const transcript = event.results[0][0].transcript
+      setInput((prev) => (prev ? `${prev} ${transcript}` : transcript))
+    }
+    recognition.onerror = () => setIsListening(false)
+    recognition.onend = () => setIsListening(false)
+
+    recognitionRef.current = recognition
+    recognition.start()
+    setIsListening(true)
+  }
+
+  async function analyzePhoto(file: File) {
+    setAnalyzingPhoto(true)
+    setErrorMsg(null)
+    setHazardResults(null)
+    try {
+      const dataUrl = await new Promise<string>((resolve, reject) => {
+        const reader = new FileReader()
+        reader.onload = () => resolve(reader.result as string)
+        reader.onerror = reject
+        reader.readAsDataURL(file)
+      })
+      const [header, base64] = dataUrl.split(",")
+      const mediaType = header.match(/data:(.*);base64/)?.[1] ?? file.type
+
+      const res = await fetch("/api/solly/analyze-photo", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          ...(bypassKey ? { "x-solly-bypass": bypassKey } : {}),
+        },
+        body: JSON.stringify({ conversationId, imageBase64: base64, mediaType }),
+      })
+      const data = await res.json()
+      if (!res.ok) throw new Error(data.error ?? "Could not analyse photo.")
+
+      setConversationId(data.conversationId)
+      setMessages((m) => [
+        ...m,
+        { role: "user", content: "[Uploaded a worksite photo for hazard analysis]" },
+        { role: "assistant", content: data.reply },
+      ])
+      setHazardResults(data.hazards ?? [])
+      if (data.recommendedCodes?.length > 0 || data.recommendedPackages?.length > 0) {
+        setRecommendedCodes(data.recommendedCodes ?? [])
+        setSelectedCodes(new Set(data.recommendedCodes ?? []))
+        setRecommendedPackages(data.recommendedPackages ?? [])
+        setPhase("recommended")
+      }
+    } catch (err) {
+      setErrorMsg(err instanceof Error ? err.message : "Could not analyse photo.")
+    } finally {
+      setAnalyzingPhoto(false)
+      if (fileInputRef.current) fileInputRef.current.value = ""
+    }
+  }
 
   async function sendMessage() {
     const text = input.trim()
@@ -309,6 +395,40 @@ export default function SollyChat({ clientEmail: initialEmail }: { clientEmail?:
 
         {phase === "unlocked" && <UnlockedPanel docs={unlockedDocs} />}
 
+        {analyzingPhoto && (
+          <div className="flex items-center gap-2 text-sm text-[#5A6472]">
+            <Loader2 className="h-4 w-4 animate-spin text-[#18707F]" />
+            Solly is checking the photo for hazards…
+          </div>
+        )}
+
+        {hazardResults && hazardResults.length > 0 && (
+          <div className="rounded-xl border border-[#E4DFD3] bg-white p-4">
+            <div className="mb-3 flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-[#B4451E]">
+              <AlertTriangle className="h-3.5 w-3.5" />
+              Hazards spotted
+            </div>
+            <div className="space-y-2">
+              {hazardResults.map((h, i) => {
+                const tone =
+                  h.severity === "high"
+                    ? "border-red-200 bg-red-50 text-red-700"
+                    : h.severity === "medium"
+                      ? "border-[#C9A84C]/40 bg-[#C9A84C]/10 text-[#8A6D2B]"
+                      : "border-[#E4DFD3] bg-[#FAFAF7] text-[#5A6472]"
+                return (
+                  <div key={i} className={`rounded-lg border px-3 py-2 text-sm ${tone}`}>
+                    <span className="mr-2 rounded-full bg-white/60 px-2 py-0.5 text-[10px] font-bold uppercase">
+                      {h.severity}
+                    </span>
+                    {h.description}
+                  </div>
+                )
+              })}
+            </div>
+          </div>
+        )}
+
         {errorMsg && (
           <p className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">{errorMsg}</p>
         )}
@@ -343,10 +463,45 @@ export default function SollyChat({ clientEmail: initialEmail }: { clientEmail?:
       {(phase === "intake" || phase === "recommended") && (
         <div className="flex items-center gap-2 border-t border-[#E4DFD3] bg-white px-4 py-3">
           <input
+            ref={fileInputRef}
+            type="file"
+            accept="image/*"
+            capture="environment"
+            className="hidden"
+            onChange={(e) => {
+              const file = e.target.files?.[0]
+              if (file) analyzePhoto(file)
+            }}
+          />
+          <button
+            onClick={() => fileInputRef.current?.click()}
+            disabled={busy || analyzingPhoto}
+            aria-label="Upload a site photo for hazard analysis"
+            title="Upload a site photo for hazard analysis"
+            className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-[#E4DFD3] text-[#5A6472] transition hover:border-[#18707F] hover:text-[#18707F] disabled:opacity-40"
+          >
+            <Camera className="h-4 w-4" />
+          </button>
+          {voiceSupported && (
+            <button
+              onClick={toggleVoiceInput}
+              disabled={busy}
+              aria-label={isListening ? "Stop voice input" : "Start voice input"}
+              title={isListening ? "Stop voice input" : "Speak instead of typing"}
+              className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-full border transition disabled:opacity-40 ${
+                isListening
+                  ? "border-[#B4451E] bg-[#B4451E]/10 text-[#B4451E]"
+                  : "border-[#E4DFD3] text-[#5A6472] hover:border-[#18707F] hover:text-[#18707F]"
+              }`}
+            >
+              {isListening ? <MicOff className="h-4 w-4" /> : <Mic className="h-4 w-4" />}
+            </button>
+          )}
+          <input
             value={input}
             onChange={(e) => setInput(e.target.value)}
             onKeyDown={(e) => e.key === "Enter" && sendMessage()}
-            placeholder="Tell Solly about your site, industry, or the form you need…"
+            placeholder={isListening ? "Listening…" : "Tell Solly about your site, industry, or the form you need…"}
             disabled={busy}
             className="flex-1 rounded-full border border-[#E4DFD3] bg-[#F6F4EF] px-4 py-2 text-sm text-[#22262B] outline-none placeholder:text-[#9CA3AF] focus:border-[#18707F] focus:ring-2 focus:ring-[#18707F]/20"
           />
@@ -611,3 +766,4 @@ sparingly for actual async waits. The watermark itself (applied server-side
 in the draft route) already does visual work signalling "not final" — the
 UI doesn't need to compete with it.
 */
+

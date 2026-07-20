@@ -45,21 +45,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Solly is temporarily unavailable. Please try again shortly." }, { status: 503 })
     }
 
-    const identifier = getClientIdentifier(request)
-    const rateLimit = await checkRateLimit({
-      identifier,
-      route: "draft",
-      maxRequests: 8,
-      windowMinutes: 60,
-    })
-    if (!rateLimit.allowed) {
-      return NextResponse.json(
-        { error: "You've requested a lot of drafts recently. Please wait a bit before trying again." },
-        { status: 429 },
-      )
-    }
-
-    const { conversationId } = (await request.json()) as { conversationId: string }
+    const { conversationId, email } = (await request.json()) as { conversationId: string; email?: string }
     if (!conversationId) {
       return NextResponse.json({ error: "Missing conversationId." }, { status: 400 })
     }
@@ -72,6 +58,57 @@ export async function POST(request: NextRequest) {
 
     if (convError || !conversation) {
       return NextResponse.json({ error: "Conversation not found." }, { status: 404 })
+    }
+
+    // If an email was supplied and the conversation doesn't have one yet
+    // (e.g. a client just purchased credits before ever reaching the
+    // finalize step), attach it now so credits can be recognized.
+    if (email && !conversation.client_email) {
+      await supabaseAdmin.from("solly_conversations").update({ client_email: email }).eq("id", conversationId)
+      conversation.client_email = email
+    }
+
+    // Paying clients (topped-up credits) skip the free IP-based limit
+    // entirely — a credit is consumed instead. Falls back to the IP limit
+    // if they have none.
+    let usedCredit = false
+    if (conversation.client_email) {
+      const { data: creditRow } = await supabaseAdmin
+        .from("solly_credits")
+        .select("credits_remaining")
+        .eq("email", conversation.client_email)
+        .maybeSingle()
+
+      if (creditRow && creditRow.credits_remaining > 0) {
+        const { error: decrementError } = await supabaseAdmin
+          .from("solly_credits")
+          .update({ credits_remaining: creditRow.credits_remaining - 1, updated_at: new Date().toISOString() })
+          .eq("email", conversation.client_email)
+          .eq("credits_remaining", creditRow.credits_remaining) // optimistic lock, avoids double-spend races
+
+        if (!decrementError) usedCredit = true
+      }
+    }
+
+    if (!usedCredit) {
+      const identifier = getClientIdentifier(request)
+      const rateLimit = await checkRateLimit({
+        identifier,
+        route: "draft",
+        maxRequests: 8,
+        windowMinutes: 60,
+        bypassKey: request.headers.get("x-solly-bypass"),
+      })
+      if (!rateLimit.allowed) {
+        return NextResponse.json(
+          {
+            error: "You've requested a lot of drafts recently. Please wait a bit before trying again.",
+            rateLimited: true,
+          },
+          { status: 429 },
+        )
+      }
+    }
     }
 
     await supabaseAdmin

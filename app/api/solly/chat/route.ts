@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server"
 import { getSupabaseAdmin } from "@/lib/supabase-admin"
 import { anthropic, SOLLY_MODEL } from "@/lib/solly/anthropic-client"
-import { SOLLY_INTAKE_SYSTEM_PROMPT } from "@/lib/solly/prompts"
+import { SOLLY_INTAKE_SYSTEM_PROMPT, SOLLY_WHS_ANALYSIS_FRAMEWORK } from "@/lib/solly/prompts"
 import { checkRateLimit, getClientIdentifier } from "@/lib/solly/rate-limit"
 import { bundles, industryBundles } from "@/lib/catalogue"
 
@@ -104,7 +104,7 @@ export async function POST(request: NextRequest) {
     const claudeResponse = await anthropic.messages.create({
       model: SOLLY_MODEL,
       max_tokens: 1000,
-      system: `${SOLLY_INTAKE_SYSTEM_PROMPT}\n\n${catalogueContext}`,
+      system: `${SOLLY_INTAKE_SYSTEM_PROMPT}\n\n${SOLLY_WHS_ANALYSIS_FRAMEWORK}\n\n${catalogueContext}`,
       messages: transcript.map((t) => ({ role: t.role, content: t.content })),
       tools: [
         {

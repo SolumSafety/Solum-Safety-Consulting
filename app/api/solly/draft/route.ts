@@ -65,7 +65,7 @@ export async function POST(request: NextRequest) {
     for (const session of sessions) {
       const { data: template, error: templateError } = await supabaseAdmin
         .from("forms_library")
-        .select("code, title, html_content")
+        .select("code, title, html_content, applicable_jurisdictions, applicable_legislation")
         .eq("code", session.form_code)
         .single()
 
@@ -74,6 +74,10 @@ export async function POST(request: NextRequest) {
         continue
       }
 
+      const legislationNote = template.applicable_legislation
+        ? `LEGAL BASIS FOR THIS TEMPLATE: ${template.applicable_legislation}\nYou may reference this in the document where the template structure calls for a legislative basis, using this text exactly. Do not add, modify, or supplement it with any other legislation, code of practice, or standard you are not given here.`
+        : `LEGAL BASIS FOR THIS TEMPLATE: not provided in the system. If the template has a field for legislative reference, leave it as [CONFIRM: applicable legislation/code of practice reference] rather than inventing one.`
+
       const claudeResponse = await anthropic.messages.create({
         model: SOLLY_MODEL,
         max_tokens: 8000,
@@ -81,7 +85,7 @@ export async function POST(request: NextRequest) {
         messages: [
           {
             role: "user",
-            content: `CONVERSATION WITH CLIENT:\n${transcriptText}\n\nBLANK TEMPLATE (${template.title}):\n${template.html_content}\n\nReturn the completed HTML document.`,
+            content: `CONVERSATION WITH CLIENT:\n${transcriptText}\n\n${legislationNote}\n\nBLANK TEMPLATE (${template.title}):\n${template.html_content}\n\nReturn the completed HTML document.`,
           },
         ],
       })

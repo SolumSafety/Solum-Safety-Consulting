@@ -13,6 +13,7 @@ export const navLinks = [
   { label: 'Our Story', href: '/our-story' },
   { label: 'Services', href: '/services' },
   { label: 'Templates', href: '/templates' },
+  { label: 'Guides', href: '/blog' },
   { label: 'Ask Solly', href: '/solly' },
   { label: 'Example Reports', href: '/reports' },
   { label: 'Sectors', href: '/#sectors' },

@@ -151,7 +151,11 @@ export async function POST(request: NextRequest) {
 
       const claudeResponse = await anthropic.messages.create({
         model: SOLLY_MODEL,
-        max_tokens: 8000,
+        // Some templates run to 100KB+ of source HTML. 8000 output tokens
+        // (~32K characters) was cutting off larger documents mid-section —
+        // this is very likely why sections were going missing. 16000 tokens
+        // (~64K characters) comfortably covers the largest templates seen.
+        max_tokens: 16000,
         system: SOLLY_DRAFT_SYSTEM_PROMPT,
         messages: [
           {
@@ -200,4 +204,5 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "Solly could not complete the draft. Please try again." }, { status: 500 })
   }
 }
+
 

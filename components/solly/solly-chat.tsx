@@ -415,6 +415,15 @@ export default function SollyChat({ clientEmail: initialEmail }: { clientEmail?:
         )}
         <div className="relative h-9 w-9 shrink-0 overflow-hidden rounded-lg ring-1 ring-white/10">
           <Image src="/solly-icon.svg" alt="Solly" fill sizes="36px" />
+          {phase === "drafting" && (
+            <span
+              className="absolute -bottom-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-[#C9743F] ring-2 ring-[#16294D]"
+              title="Solly is drafting"
+              aria-label="Solly is drafting"
+            >
+              <Loader2 className="h-2.5 w-2.5 animate-spin text-white" />
+            </span>
+          )}
         </div>
         <div className="flex-1">
           <p className="text-sm font-semibold leading-tight text-white">Solly</p>
@@ -625,16 +634,19 @@ function MessageBubble({ message }: { message: ChatMessage }) {
 }
 
 function StatusStamp({ phase }: { phase: Phase }) {
-  const tone =
-    phase === "unlocked"
+  const isDrafting = phase === "drafting"
+  const tone = isDrafting
+    ? "border-[#C9743F] text-[#C9743F] bg-[#C9743F]/10"
+    : phase === "unlocked"
       ? "border-[#C9A84C] text-[#C9A84C]"
       : phase === "ready_for_purchase" || phase === "checkout"
         ? "border-[#8FB4BC] text-[#8FB4BC]"
         : "border-white/30 text-white/70"
   return (
     <span
-      className={`hidden shrink-0 rounded-full border px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wider sm:inline-block ${tone}`}
+      className={`hidden shrink-0 items-center gap-1.5 rounded-full border px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wider sm:inline-flex ${tone}`}
     >
+      {isDrafting && <Loader2 className="h-3 w-3 animate-spin" />}
       {STAMP_LABEL[phase]}
     </span>
   )
@@ -842,12 +854,20 @@ function UnlockedPanel({ docs }: { docs: UnlockedDoc[] }) {
             className="flex items-center justify-between rounded-lg border border-[#C9A84C]/30 bg-white px-3 py-2.5 text-sm"
           >
             <span className="font-mono text-xs text-[#5A6472]">{d.formCode}</span>
-            <a
-              href={`/api/solly/document/${d.sessionId}`}
-              className="rounded-full bg-[#16294D] px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-[#18707F]"
-            >
-              Download
-            </a>
+            <div className="flex items-center gap-2">
+              <a
+                href={`/api/solly/document/${d.sessionId}/docx`}
+                className="rounded-full border border-[#16294D]/30 px-3 py-1.5 text-xs font-semibold text-[#16294D] transition hover:border-[#16294D] hover:bg-[#16294D]/5"
+              >
+                Word
+              </a>
+              <a
+                href={`/api/solly/document/${d.sessionId}`}
+                className="rounded-full bg-[#16294D] px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-[#18707F]"
+              >
+                Download
+              </a>
+            </div>
           </div>
         ))}
       </div>
@@ -875,4 +895,3 @@ sparingly for actual async waits. The watermark itself (applied server-side
 in the draft route) already does visual work signalling "not final" — the
 UI doesn't need to compete with it.
 */
-

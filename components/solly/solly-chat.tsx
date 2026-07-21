@@ -167,10 +167,13 @@ export default function SollyChat({ clientEmail: initialEmail }: { clientEmail?:
           "Content-Type": "application/json",
           ...(bypassKey ? { "x-solly-bypass": bypassKey } : {}),
         },
-        body: JSON.stringify({ conversationId, imageBase64: base64, mediaType }),
+        body: JSON.stringify({ conversationId, imageBase64: base64, mediaType, email: email || undefined }),
       })
       const data = await res.json()
-      if (!res.ok) throw new Error(data.error ?? "Could not analyse photo.")
+      if (!res.ok) {
+        if (data.rateLimited) setShowBuyCredits(true)
+        throw new Error(data.error ?? "Could not analyse photo.")
+      }
 
       setConversationId(data.conversationId)
       setMessages((m) => [
@@ -766,4 +769,3 @@ sparingly for actual async waits. The watermark itself (applied server-side
 in the draft route) already does visual work signalling "not final" — the
 UI doesn't need to compete with it.
 */
-

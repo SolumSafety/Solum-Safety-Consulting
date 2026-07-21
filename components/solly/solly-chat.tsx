@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react"
 import Image from "next/image"
-import { Send, FileCheck2, Lock, Unlock, Loader2, ShieldCheck, ShoppingBag, Camera, Mic, MicOff, AlertTriangle } from "lucide-react"
+import { Send, FileCheck2, Lock, Unlock, Loader2, ShieldCheck, ShoppingBag, Camera, Mic, MicOff, AlertTriangle, ArrowLeft } from "lucide-react"
 
 // ---------------------------------------------------------------------------
 // Solly — the WHS Agent chat interface.
@@ -50,6 +50,7 @@ export default function SollyChat({ clientEmail: initialEmail }: { clientEmail?:
   const [conversationId, setConversationId] = useState<string | null>(null)
   const [phase, setPhase] = useState<Phase>("intake")
   const [recommendedCodes, setRecommendedCodes] = useState<string[]>([])
+  const [recommendedForms, setRecommendedForms] = useState<{ code: string; title: string }[]>([])
   const [recommendedPackages, setRecommendedPackages] = useState<{ code: string; name: string }[]>([])
   const [selectedCodes, setSelectedCodes] = useState<Set<string>>(new Set())
   const [drafts, setDrafts] = useState<DraftResult[]>([])
@@ -66,6 +67,9 @@ export default function SollyChat({ clientEmail: initialEmail }: { clientEmail?:
   const [hazardResults, setHazardResults] = useState<{ description: string; severity: "low" | "medium" | "high" }[] | null>(null)
   const [isListening, setIsListening] = useState(false)
   const [voiceSupported, setVoiceSupported] = useState(false)
+  const [uploadingLogo, setUploadingLogo] = useState(false)
+  const [logoUrl, setLogoUrl] = useState<string | null>(null)
+  const logoInputRef = useRef<HTMLInputElement>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
   const recognitionRef = useRef<any>(null)
 
@@ -184,6 +188,7 @@ export default function SollyChat({ clientEmail: initialEmail }: { clientEmail?:
       setHazardResults(data.hazards ?? [])
       if (data.recommendedCodes?.length > 0 || data.recommendedPackages?.length > 0) {
         setRecommendedCodes(data.recommendedCodes ?? [])
+        setRecommendedForms(data.recommendedForms ?? [])
         setSelectedCodes(new Set(data.recommendedCodes ?? []))
         setRecommendedPackages(data.recommendedPackages ?? [])
         setPhase("recommended")
@@ -193,6 +198,42 @@ export default function SollyChat({ clientEmail: initialEmail }: { clientEmail?:
     } finally {
       setAnalyzingPhoto(false)
       if (fileInputRef.current) fileInputRef.current.value = ""
+    }
+  }
+
+  async function uploadLogo(file: File) {
+    if (!conversationId) {
+      setErrorMsg("Start chatting with Solly first, then upload your logo.")
+      return
+    }
+    setUploadingLogo(true)
+    setErrorMsg(null)
+    try {
+      const dataUrl = await new Promise<string>((resolve, reject) => {
+        const reader = new FileReader()
+        reader.onload = () => resolve(reader.result as string)
+        reader.onerror = reject
+        reader.readAsDataURL(file)
+      })
+      const [header, base64] = dataUrl.split(",")
+      const mediaType = header.match(/data:(.*);base64/)?.[1] ?? file.type
+
+      const res = await fetch("/api/solly/upload-logo", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          ...(bypassKey ? { "x-solly-bypass": bypassKey } : {}),
+        },
+        body: JSON.stringify({ conversationId, imageBase64: base64, mediaType }),
+      })
+      const data = await res.json()
+      if (!res.ok) throw new Error(data.error ?? "Could not upload logo.")
+      setLogoUrl(data.logoUrl)
+    } catch (err) {
+      setErrorMsg(err instanceof Error ? err.message : "Could not upload logo.")
+    } finally {
+      setUploadingLogo(false)
+      if (logoInputRef.current) logoInputRef.current.value = ""
     }
   }
 
@@ -221,6 +262,7 @@ export default function SollyChat({ clientEmail: initialEmail }: { clientEmail?:
 
       if (data.type === "recommendation") {
         setRecommendedCodes(data.recommendedCodes ?? [])
+        setRecommendedForms(data.recommendedForms ?? [])
         setSelectedCodes(new Set(data.recommendedCodes ?? []))
         setRecommendedPackages(data.recommendedPackages ?? [])
         setPhase("recommended")
@@ -340,10 +382,37 @@ export default function SollyChat({ clientEmail: initialEmail }: { clientEmail?:
 
   const activeDraft = drafts.find((d) => d.formCode === activeDraftCode)
 
+  function goBack() {
+    setErrorMsg(null)
+    if (phase === "recommended") {
+      setPhase("intake")
+      setRecommendedCodes([])
+      setRecommendedForms([])
+      setRecommendedPackages([])
+      setSelectedCodes(new Set())
+      setHazardResults(null)
+    } else if (phase === "ready_for_purchase" || phase === "checkout") {
+      setPhase("recommended")
+      setDrafts([])
+      setActiveDraftCode(null)
+      setBundleUpsell(null)
+    }
+  }
+
   return (
     <div className="mx-auto flex h-[720px] max-h-[85vh] w-full max-w-3xl flex-col overflow-hidden rounded-2xl border border-[#E4DFD3] bg-[#F6F4EF] shadow-sm">
       {/* Header */}
       <div className="flex items-center gap-3 border-b border-[#E4DFD3] bg-[#16294D] px-5 py-4">
+        {(phase === "recommended" || phase === "ready_for_purchase" || phase === "checkout") && (
+          <button
+            onClick={goBack}
+            aria-label="Go back"
+            title="Go back"
+            className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-white/70 transition hover:bg-white/10 hover:text-white"
+          >
+            <ArrowLeft className="h-4 w-4" />
+          </button>
+        )}
         <div className="relative h-9 w-9 shrink-0 overflow-hidden rounded-lg ring-1 ring-white/10">
           <Image src="/solly-icon.svg" alt="Solly" fill sizes="36px" />
         </div>
@@ -368,11 +437,15 @@ export default function SollyChat({ clientEmail: initialEmail }: { clientEmail?:
         {phase === "recommended" && (
           <RecommendationCard
             codes={recommendedCodes}
+            forms={recommendedForms}
             packages={recommendedPackages}
             selected={selectedCodes}
             onToggle={toggleCode}
             onConfirm={confirmAndDraft}
             busy={busy}
+            logoUrl={logoUrl}
+            uploadingLogo={uploadingLogo}
+            onLogoButtonClick={() => logoInputRef.current?.click()}
           />
         )}
 
@@ -476,6 +549,16 @@ export default function SollyChat({ clientEmail: initialEmail }: { clientEmail?:
               if (file) analyzePhoto(file)
             }}
           />
+          <input
+            ref={logoInputRef}
+            type="file"
+            accept="image/png,image/jpeg,image/webp,image/svg+xml"
+            className="hidden"
+            onChange={(e) => {
+              const file = e.target.files?.[0]
+              if (file) uploadLogo(file)
+            }}
+          />
           <button
             onClick={() => fileInputRef.current?.click()}
             disabled={busy || analyzingPhoto}
@@ -559,19 +642,28 @@ function StatusStamp({ phase }: { phase: Phase }) {
 
 function RecommendationCard({
   codes,
+  forms,
   packages,
   selected,
   onToggle,
   onConfirm,
   busy,
+  logoUrl,
+  uploadingLogo,
+  onLogoButtonClick,
 }: {
   codes: string[]
+  forms: { code: string; title: string }[]
   packages: { code: string; name: string }[]
   selected: Set<string>
   onToggle: (code: string) => void
   onConfirm: () => void
   busy: boolean
+  logoUrl: string | null
+  uploadingLogo: boolean
+  onLogoButtonClick: () => void
 }) {
+  const titleFor = (code: string) => forms.find((f) => f.code === code)?.title ?? code
   return (
     <div className="space-y-3">
       {codes.length > 0 && (
@@ -590,12 +682,26 @@ function RecommendationCard({
                   type="checkbox"
                   checked={selected.has(code)}
                   onChange={() => onToggle(code)}
-                  className="h-4 w-4 accent-[#18707F]"
+                  className="h-4 w-4 shrink-0 accent-[#18707F]"
                 />
-                <span className="font-mono text-xs text-[#5A6472]">{code}</span>
+                <span className="text-[#22262B]">{titleFor(code)}</span>
               </label>
             ))}
           </div>
+
+          <div className="mt-4 flex items-center justify-between gap-3 rounded-lg border border-dashed border-[#E4DFD3] bg-[#FAFAF7] px-3 py-2.5">
+            <div className="text-xs text-[#5A6472]">
+              {logoUrl ? "✓ Logo added — it'll be included in your document" : "Have a company logo? Add it to your document."}
+            </div>
+            <button
+              onClick={onLogoButtonClick}
+              disabled={uploadingLogo}
+              className="shrink-0 rounded-full border border-[#E4DFD3] px-3 py-1.5 text-xs font-semibold text-[#5A6472] transition hover:border-[#18707F] hover:text-[#18707F] disabled:opacity-40"
+            >
+              {uploadingLogo ? "Uploading…" : logoUrl ? "Replace logo" : "Upload logo"}
+            </button>
+          </div>
+
           <button
             onClick={onConfirm}
             disabled={busy || selected.size === 0}
@@ -769,3 +875,4 @@ sparingly for actual async waits. The watermark itself (applied server-side
 in the draft route) already does visual work signalling "not final" — the
 UI doesn't need to compete with it.
 */
+

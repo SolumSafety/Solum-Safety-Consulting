@@ -199,6 +199,13 @@ export async function POST(request: NextRequest) {
       reply: parsed.message,
       type: parsed.type,
       recommendedCodes: parsed.type === "recommendation" ? updates.recommended_form_codes : undefined,
+      recommendedForms:
+        parsed.type === "recommendation"
+          ? (updates.recommended_form_codes as string[]).map((code: string) => ({
+              code,
+              title: (forms ?? []).find((f) => f.code === code)?.title ?? code,
+            }))
+          : undefined,
       recommendedPackages:
         parsed.type === "recommendation"
           ? validPackageCodes.map((code) => {

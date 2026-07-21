@@ -145,6 +145,10 @@ export async function POST(request: NextRequest) {
         ? `LEGAL BASIS FOR THIS TEMPLATE: ${template.applicable_legislation}\nYou may reference this in the document where the template structure calls for a legislative basis, using this text exactly. Do not add, modify, or supplement it with any other legislation, code of practice, or standard you are not given here.`
         : `LEGAL BASIS FOR THIS TEMPLATE: not provided in the system. If the template has a field for legislative reference, leave it as [CONFIRM: applicable legislation/code of practice reference] rather than inventing one.`
 
+      const logoNote = conversation.client_logo_url
+        ? `CLIENT LOGO: ${conversation.client_logo_url}\nWherever the template has a logo placeholder (e.g. "+ Your Logo", "[Company Logo]", "Insert logo here", an empty logo box, or similar), replace it with: <img src="${conversation.client_logo_url}" alt="Company logo" style="max-height:64px;max-width:200px;object-fit:contain;" />`
+        : `CLIENT LOGO: not provided. Leave any logo placeholder in the template exactly as it appears — do not remove it or invent an image.`
+
       const claudeResponse = await anthropic.messages.create({
         model: SOLLY_MODEL,
         max_tokens: 8000,
@@ -152,7 +156,7 @@ export async function POST(request: NextRequest) {
         messages: [
           {
             role: "user",
-            content: `CONVERSATION WITH CLIENT:\n${transcriptText}\n\n${legislationNote}\n\nBLANK TEMPLATE (${template.title}):\n${template.html_content}\n\nReturn the completed HTML document.`,
+            content: `CONVERSATION WITH CLIENT:\n${transcriptText}\n\n${legislationNote}\n\n${logoNote}\n\nBLANK TEMPLATE (${template.title}):\n${template.html_content}\n\nReturn the completed HTML document.`,
           },
         ],
       })
@@ -196,3 +200,4 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "Solly could not complete the draft. Please try again." }, { status: 500 })
   }
 }
+

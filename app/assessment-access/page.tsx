@@ -15,17 +15,19 @@ export default async function AssessmentAccessPage({
   searchParams: Promise<{ session_id?: string }>
 }) {
   const { session_id } = await searchParams
-
   let paid = false
   if (session_id) {
     try {
       const session = await stripe.checkout.sessions.retrieve(session_id)
-      paid = session.payment_status === "paid"
+      // 'paid' covers normal charges. 'no_payment_required' covers no-cost
+      // orders — e.g. a 100%-off discount code — which Stripe reports
+      // separately from 'paid' even though checkout genuinely completed.
+      // See: https://docs.stripe.com/api/checkout/sessions/object
+      paid = session.payment_status === "paid" || session.payment_status === "no_payment_required"
     } catch {
       paid = false
     }
   }
-
   return (
     <>
       <SiteHeader />

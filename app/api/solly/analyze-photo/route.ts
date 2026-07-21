@@ -32,25 +32,11 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Solly is temporarily unavailable. Please try again shortly." }, { status: 503 })
     }
 
-    const identifier = getClientIdentifier(request)
-    const rateLimit = await checkRateLimit({
-      identifier,
-      route: "photo",
-      maxRequests: 5,
-      windowMinutes: 60,
-      bypassKey: request.headers.get("x-solly-bypass"),
-    })
-    if (!rateLimit.allowed) {
-      return NextResponse.json(
-        { error: "You've analysed a lot of photos recently. Please wait a bit before trying again." },
-        { status: 429 },
-      )
-    }
-
-    const { conversationId, imageBase64, mediaType } = (await request.json()) as {
+    const { conversationId, imageBase64, mediaType, email } = (await request.json()) as {
       conversationId?: string
       imageBase64: string
       mediaType: string
+      email?: string
     }
 
     if (!imageBase64 || !mediaType) {
@@ -64,6 +50,48 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Image is too large. Please use a smaller photo." }, { status: 400 })
     }
 
+    // Paying clients (topped-up credits) skip the free IP-based limit
+    // entirely — a credit is consumed instead, same pool as drafts. Falls
+    // back to the IP limit if they have none.
+    let usedCredit = false
+    if (email) {
+      const { data: creditRow } = await supabaseAdmin
+        .from("solly_credits")
+        .select("credits_remaining")
+        .eq("email", email)
+        .maybeSingle()
+
+      if (creditRow && creditRow.credits_remaining > 0) {
+        const { error: decrementError } = await supabaseAdmin
+          .from("solly_credits")
+          .update({ credits_remaining: creditRow.credits_remaining - 1, updated_at: new Date().toISOString() })
+          .eq("email", email)
+          .eq("credits_remaining", creditRow.credits_remaining) // optimistic lock, avoids double-spend races
+
+        if (!decrementError) usedCredit = true
+      }
+    }
+
+    if (!usedCredit) {
+      const identifier = getClientIdentifier(request)
+      const rateLimit = await checkRateLimit({
+        identifier,
+        route: "photo",
+        maxRequests: 5,
+        windowMinutes: 60,
+        bypassKey: request.headers.get("x-solly-bypass"),
+      })
+      if (!rateLimit.allowed) {
+        return NextResponse.json(
+          {
+            error: "You've analysed a lot of photos recently. Please wait a bit before trying again.",
+            rateLimited: true,
+          },
+          { status: 429 },
+        )
+      }
+    }
+
     let conversation
     if (conversationId) {
       const { data } = await supabaseAdmin.from("solly_conversations").select("*").eq("id", conversationId).single()
@@ -72,11 +100,15 @@ export async function POST(request: NextRequest) {
     if (!conversation) {
       const { data, error } = await supabaseAdmin
         .from("solly_conversations")
-        .insert({ conversation: [], status: "gathering_requirements" })
+        .insert({ conversation: [], status: "gathering_requirements", client_email: email ?? null })
         .select("*")
         .single()
       if (error || !data) return NextResponse.json({ error: "Could not start conversation." }, { status: 500 })
       conversation = data
+    }
+    if (email && !conversation.client_email) {
+      await supabaseAdmin.from("solly_conversations").update({ client_email: email }).eq("id", conversation.id)
+      conversation.client_email = email
     }
 
     const { data: forms } = await supabaseAdmin

@@ -204,6 +204,10 @@ export async function POST(request: NextRequest) {
       reply: message,
       hazards,
       recommendedCodes: codes,
+      recommendedForms: codes.map((code) => ({
+        code,
+        title: (forms ?? []).find((f) => f.code === code)?.title ?? code,
+      })),
       recommendedPackages: packageCodes.map((code) => {
         const bundle = bundles.find((b) => b.code === code)
         const industry = industryBundles.find((i) => i.code === code)

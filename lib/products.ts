@@ -62,7 +62,14 @@ export const PRICES: Record<string, number> = {
 // sync with lib/assessment-products.ts on the assessor app. If this product
 // is ever recreated in Stripe (which generates a new Price/Product ID),
 // update it here too or purchases will silently fail entitlement matching.
-const TIER2_STRIPE_PRICE_ID = "price_1Tu0ad3a72jjBENAXjIqRIeO"
+//
+// CORRECTED: was price_1Tu0ad3a72jjBENAXjIqRIeO, which belonged to the OLD
+// deactivated product (prod_UXgSaERu8Vkmqd, archived when the product was
+// recreated on 17 July). Stripe rejected checkout with "Price ... is not
+// available to be purchased because its product is not active." The
+// current active price, tied to the current active product
+// (prod_UtoIgz917kqbr6), is below.
+const TIER2_STRIPE_PRICE_ID = "price_1Tu0gG3a72jjBENAuZ9yUxHm"
 const INDUSTRY_FORMATS = ["Toolbox talk set"]
 const BUNDLE_FORMATS = ["Full bundle (ZIP)"]
 function build(): PurchasableProduct[] {
@@ -73,7 +80,7 @@ function build(): PurchasableProduct[] {
   // assessor app can match it back to a tier after payment.
   all.push({
     code: TIER2_CODE,
-    name: "Tier 2 — WHS Desktop Gap Analysis",
+    name: "Tier 2 - Internal Desktop WHS Gap Analysis",
     description:
       "Online WHS maturity self-assessment completed by your team and submitted to Solum Safety Consulting for independent desktop review, maturity rating and corrective action plan.",
     category: "service",

@@ -132,13 +132,13 @@ export const gapChecklist = [
 export const tiers = [
   {
     tier: 'TIER 2',
-    title: 'Desktop Gap Analysis',
+    title: 'Internal Desktop WHS Gap Analysis',
     description:
       'An online assessment completed by your WHS representative and submitted to Solum Safety Consulting for review. Available to purchase online.',
   },
   {
     tier: 'TIER 3',
-    title: 'Field Assessment & Verification',
+    title: 'Independent WHS Gap Analysis Field Assessment and Verification',
     description:
       'A full external WHS audit carried out on site by Solum Safety Consulting. Currently taking bookings for 2027.',
   },
@@ -227,11 +227,11 @@ export const serviceTiers: {
 }[] = [
   {
     tier: 'TIER 2',
-    title: 'Desktop Gap Analysis',
+    title: 'Internal Desktop WHS Gap Analysis',
     description:
       'An assessment your WHS representative completes through our online assessment app, then submits to Solum Safety Consulting for review.',
     points: [
-      'Structured assessment across the key WHS domains',
+      'Structured assessment across 18 core WHS domains',
       'Completed online using your own knowledge, systems and evidence',
       'Submitted to Solum for an independent desktop review',
       'A detailed report based on the evidence you provide',
@@ -245,7 +245,7 @@ export const serviceTiers: {
   },
   {
     tier: 'TIER 3',
-    title: 'Field Assessment & Verification',
+    title: 'Independent WHS Gap Analysis Field Assessment and Verification',
     description: 'A full external WHS audit carried out on site by Solum Safety Consulting.',
     points: [
       'Carried out on site by an experienced assessor',
@@ -306,7 +306,6 @@ export const testimonials: {
       'Solum gave us a WHS system the crews will actually pick up. The templates fitted the way we already work, so there is no more guessing about which form to use or how to fill it in.',
     name: 'Daniel M.',
     role: 'Operations Manager',
-    company: 'Civil & Construction',
     accent: 'olive',
   },
   {
@@ -314,7 +313,6 @@ export const testimonials: {
       'The gap analysis showed us exactly where we stood and what to fix first. For the first time our leaders understood their duties and had a clear plan to work to.',
     name: 'Sarah T.',
     role: 'General Manager',
-    company: 'Renewable Energy',
     accent: 'gold',
   },
   {
@@ -322,7 +320,6 @@ export const testimonials: {
       'Practical, clear and easy to deal with. WHS used to be an afterthought on our projects. Now it is part of delivery from day one.',
     name: 'James R.',
     role: 'Project Director',
-    company: 'Infrastructure Delivery',
     accent: 'terracotta',
   },
 ]
@@ -360,12 +357,12 @@ export const sampleReports: {
     tier: 'TIER 2',
     title: 'WHS Management System Gap Analysis',
     description:
-      'Desktop gap analysis with an overall maturity score, a 15 domain summary, the methodology used and a prioritised action register.',
+      'Desktop gap analysis with an overall maturity score, an 18 domain summary, the methodology used and a prioritised action register.',
     cover: '/report-cover-1.png',
   },
   {
     tier: 'TIER 3',
-    title: 'Enterprise WHS Assurance Report',
+    title: 'Independent WHS Gap Analysis Field Assessment and Verification',
     description:
       'Full governance assessment with a department by domain maturity matrix, legal exposure analysis and an organisation-wide action plan.',
     cover: '/report-cover-0.png',

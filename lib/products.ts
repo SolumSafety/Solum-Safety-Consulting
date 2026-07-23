@@ -50,7 +50,7 @@ export const FILES: Record<string, string[]> = {
 export const PRICES: Record<string, number> = {
   // Auto-generated from the pricing spreadsheet (GST-inclusive, in cents).
   ...PRODUCT_PRICES,
-  // Tier 2 Desktop Gap Analysis — paid service (redirects to assessment app).
+  // Tier 2 - Internal Desktop WHS Gap Analysis — paid service (redirects to assessment app).
   [TIER2_CODE]: 132000, // $1,320 AUD incl. GST
 }
 
@@ -72,7 +72,7 @@ function build(): PurchasableProduct[] {
     formats: ["Online assessment"],
     priceInCents: PRICES[TIER2_CODE] ?? null,
     files: [],
-    redirectTo: ASSESSMENT_SITE_URL,
+    redirectTo: `${ASSESSMENT_SITE_URL}/api/auth/client/from-session`,
   })
 
   for (const b of bundles) {

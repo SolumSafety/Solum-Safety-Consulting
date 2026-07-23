@@ -236,7 +236,7 @@ export default function ServicesPage() {
                               <BuyButton
                                 code={tier.purchaseCode}
                                 price={price}
-                                label="Buy Tier 2 Gap Analysis"
+                                label={`Buy ${tier.tier}`}
                               />
                               <p className="mt-2.5 text-xs leading-relaxed text-muted-foreground">
                                 Purchase online and get instant access. Once payment is confirmed you&apos;ll be

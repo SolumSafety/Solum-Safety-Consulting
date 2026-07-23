@@ -8,7 +8,6 @@ import {
 import { PRODUCT_FILES } from "./product-files"
 import { PRODUCT_PRICES } from "./product-prices"
 import { TIER2_CODE, ASSESSMENT_SITE_URL } from "./site"
-
 export type ProductCategory = "bundle" | "industry" | "whs" | "project" | "leadership" | "service"
 
 export type PurchasableProduct = {
@@ -27,8 +26,15 @@ export type PurchasableProduct = {
    * appended so the destination app can verify the purchase.
    */
   redirectTo?: string
+  /**
+   * If set, checkout uses this real, pre-registered Stripe Price object
+   * instead of building a fresh price_data price on the fly. Required for
+   * any product that needs to be recognised by ID after the fact (e.g. the
+   * assessor app's tierForStripeIds lookup) — a dynamically generated price
+   * gets a brand-new ID on every checkout and can never be matched later.
+   */
+  stripePriceId?: string
 }
-
 /**
  * FILES — Blob pathnames of the deliverables for each product code.
  * Populated from the uploaded product archives. Auto-generated; see
@@ -39,7 +45,6 @@ export const FILES: Record<string, string[]> = {
   // Populated by the product-upload step (see PRODUCT_FILES below).
   ...PRODUCT_FILES,
 }
-
 /**
  * PRICES — price in cents (AUD) per product code, from the pricing
  * spreadsheet. Codes without a price (or without files) show an Enquire
@@ -53,16 +58,19 @@ export const PRICES: Record<string, number> = {
   // Tier 2 - Internal Desktop WHS Gap Analysis — paid service (redirects to assessment app).
   [TIER2_CODE]: 132000, // $1,320 AUD incl. GST
 }
-
+// Real Stripe Price ID for the Tier 2 assessment Payment Link — must stay in
+// sync with lib/assessment-products.ts on the assessor app. If this product
+// is ever recreated in Stripe (which generates a new Price/Product ID),
+// update it here too or purchases will silently fail entitlement matching.
+const TIER2_STRIPE_PRICE_ID = "price_1Tu0ad3a72jjBENAXjIqRIeO"
 const INDUSTRY_FORMATS = ["Toolbox talk set"]
 const BUNDLE_FORMATS = ["Full bundle (ZIP)"]
-
 function build(): PurchasableProduct[] {
   const all: PurchasableProduct[] = []
-
   // Tier 2 Desktop Gap Analysis — a paid service that sends the buyer straight
   // to the live client assessment app once payment is confirmed. No
-  // downloadable files.
+  // downloadable files. Uses a real Stripe price (not price_data) so the
+  // assessor app can match it back to a tier after payment.
   all.push({
     code: TIER2_CODE,
     name: "Tier 2 — WHS Desktop Gap Analysis",
@@ -73,8 +81,8 @@ function build(): PurchasableProduct[] {
     priceInCents: PRICES[TIER2_CODE] ?? null,
     files: [],
     redirectTo: `${ASSESSMENT_SITE_URL}/api/auth/client/from-session`,
+    stripePriceId: TIER2_STRIPE_PRICE_ID,
   })
-
   for (const b of bundles) {
     all.push({
       code: b.code,
@@ -117,15 +125,11 @@ function build(): PurchasableProduct[] {
   }
   return all
 }
-
 export const PRODUCTS: PurchasableProduct[] = build()
-
 const BY_CODE = new Map(PRODUCTS.map((p) => [p.code, p]))
-
 export function getProduct(code: string): PurchasableProduct | undefined {
   return BY_CODE.get(code)
 }
-
 export function isPurchasable(code: string): boolean {
   const p = BY_CODE.get(code)
   if (!p || p.priceInCents == null || p.priceInCents <= 0) return false
@@ -133,7 +137,6 @@ export function isPurchasable(code: string): boolean {
   if (p.category === "service") return !!p.redirectTo
   return p.files.length > 0
 }
-
 export function formatPrice(priceInCents: number | null): string {
   if (priceInCents == null) return ""
   return new Intl.NumberFormat("en-AU", {

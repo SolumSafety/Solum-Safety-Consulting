@@ -65,7 +65,7 @@ async function unlockSollyDocuments(conversationId: string, codes: string[], ses
     .from("form_purchases")
     .upsert(
       {
-        email: email ?? "unknown@solumsafetyconsulting.com.au",
+        email: email ?? "info@solumsafetyconsulting.com.au",
         form_codes: codes,
         amount_cents: amountCents,
         currency: "aud",

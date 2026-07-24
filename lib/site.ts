@@ -231,7 +231,7 @@ export const serviceTiers: {
     description:
       'An assessment your WHS representative completes through our online assessment app, then submits to Solum Safety Consulting for review.',
     points: [
-      'Structured assessment across 18 core WHS domains',
+      'Structured assessment across 19 core WHS domains',
       'Completed online using your own knowledge, systems and evidence',
       'Submitted to Solum for an independent desktop review',
       'A detailed report based on the evidence you provide',
@@ -306,6 +306,7 @@ export const testimonials: {
       'Solum gave us a WHS system the crews will actually pick up. The templates fitted the way we already work, so there is no more guessing about which form to use or how to fill it in.',
     name: 'Daniel M.',
     role: 'Operations Manager',
+    company: 'Civil & Construction',
     accent: 'olive',
   },
   {
@@ -313,6 +314,7 @@ export const testimonials: {
       'The gap analysis showed us exactly where we stood and what to fix first. For the first time our leaders understood their duties and had a clear plan to work to.',
     name: 'Sarah T.',
     role: 'General Manager',
+    company: 'Renewable Energy',
     accent: 'gold',
   },
   {
@@ -320,6 +322,7 @@ export const testimonials: {
       'Practical, clear and easy to deal with. WHS used to be an afterthought on our projects. Now it is part of delivery from day one.',
     name: 'James R.',
     role: 'Project Director',
+    company: 'Infrastructure Delivery',
     accent: 'terracotta',
   },
 ]
@@ -357,7 +360,7 @@ export const sampleReports: {
     tier: 'TIER 2',
     title: 'WHS Management System Gap Analysis',
     description:
-      'Desktop gap analysis with an overall maturity score, an 18 domain summary, the methodology used and a prioritised action register.',
+      'Desktop gap analysis with an overall maturity score, a 19 domain summary, the methodology used and a prioritised action register.',
     cover: '/report-cover-1.png',
   },
   {

@@ -16,6 +16,7 @@ export const PRODUCT_FILES: Record<string, string[]> = {
   "Industry-Specific-011": ["products/industry/Industry-Specific-011.zip"],
   "Industry-Specific-012": ["products/industry/Industry-Specific-012.zip"],
   "Industry-Specific-013": ["products/industry/Industry-Specific-013.zip"],
+  "Industry-Specific-014": ["products/industry/Industry-Specific-014.zip"],
   "LDSG-SSC-Bundle-001": ["products/bundles/LDSG-SSC-Bundle-001.zip"],
   "PM-WHS-SSC-Bundle-001": ["products/bundles/PM-WHS-SSC-Bundle-001.zip"],
   "SLMPKG-WHS-Bundle-001": ["products/bundles/SLMPKG-WHS-Bundle-001.zip"],

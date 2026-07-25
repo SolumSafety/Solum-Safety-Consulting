@@ -15,6 +15,7 @@ export const PRODUCT_PRICES: Record<string, number> = {
   "Industry-Specific-011": 1980,
   "Industry-Specific-012": 1980,
   "Industry-Specific-013": 1980,
+  "Industry-Specific-014": 2750,
   "LDSG-SSC-Bundle-001": 6600,
   "PM-WHS-SSC-Bundle-001": 1650,
   "SLMPKG-WHS-Bundle-001": 16500,

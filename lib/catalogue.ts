@@ -180,6 +180,7 @@ export const industryBundles: IndustryBundle[] = [
   { name: "Renewable Energy", code: "Industry-Specific-011" },
   { name: "Retail", code: "Industry-Specific-012" },
   { name: "Security", code: "Industry-Specific-013" },
+  { name: "Hospitality", code: "Industry-Specific-014" },
 ]
 
 const DIGITAL_WORD = ["Digital form", "Editable Word"]
@@ -821,5 +822,7 @@ export const leadershipGuides: TemplateItem[] = [
   { name: "Embedding Wellbeing into Culture", code: "SSC-LDR-17", description: "Strategies to make wellbeing part of everyday culture. Used to move from one-off initiatives to lasting practice.", formats: LEADER_FORMATS },
   { name: "Reasonable Adjustments", code: "SSC-LDR-18", description: "Explains reasonable adjustments for workers. Used to help leaders support staff to stay at or return to work.", formats: LEADER_FORMATS },
   { name: "Grief & Critical Incident Response", code: "SSC-LDR-19", description: "Guidance on responding to grief and critical incidents. Used to help leaders support teams after traumatic events.", formats: LEADER_FORMATS },
-  { name: "Documentation & File Notes", code: "SSC-LDR-20", description: "Best practice for documenting wellbeing conversations. Used to keep accurate, appropriate and confidential records.", formats: LEADER_FORMATS },
+  { name: "Documentation & File Notes", code: "SSC-LDR-20", description: "Best practice for documenting wellbeing conversations. Used to keep accurate, appropriate and confidential records.", formats: LEADER_FORMATS }, 
+  { name: "Workers Compensation Reforms 2026 Leadership Guide", code: "SSC-LDR-21", description: "A practical, plain-English guide designed for business leaders, WHS managers, supervisors, and decision-makers, providing a clear overview of the 2026 NSW Workers Compensation reforms, key employer obligations, psychological injury changes, claim management requirements, and the actions organisations need to take to minimise risk, support injured workers, and maintain compliance.", formats: LEADER_FORMATS },
+]
 ]

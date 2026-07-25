@@ -825,4 +825,3 @@ export const leadershipGuides: TemplateItem[] = [
   { name: "Documentation & File Notes", code: "SSC-LDR-20", description: "Best practice for documenting wellbeing conversations. Used to keep accurate, appropriate and confidential records.", formats: LEADER_FORMATS }, 
   { name: "Workers Compensation Reforms 2026 Leadership Guide", code: "SSC-LDR-21", description: "A practical, plain-English guide designed for business leaders, WHS managers, supervisors, and decision-makers, providing a clear overview of the 2026 NSW Workers Compensation reforms, key employer obligations, psychological injury changes, claim management requirements, and the actions organisations need to take to minimise risk, support injured workers, and maintain compliance.", formats: LEADER_FORMATS },
 ]
-]

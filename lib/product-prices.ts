@@ -39,6 +39,7 @@ export const PRODUCT_PRICES: Record<string, number> = {
   "SSC-LDR-18": 220,
   "SSC-LDR-19": 220,
   "SSC-LDR-20": 220,
+  "SSC-LDR-21": 550,
   "SSC-PM-CLO-001": 220,
   "SSC-PM-GRC-001": 220,
   "SSC-PM-LLR-001": 220,

@@ -105,7 +105,7 @@ function PriceLine({ code, invert = false }: { code: string; invert?: boolean })
 }
 
 /** Minimal shape every previewable item needs — works for TemplateItem, Bundle, and IndustryBundle. */
-type PreviewableItem = { name: string; code: string }
+type PreviewableItem = { name: string; code: string; description?: string }
 
 /** Full-screen preview overlay showing the watermarked first page. Shared across every card type. */
 function PreviewLightbox({ item, onClose }: { item: PreviewableItem; onClose: () => void }) {
@@ -118,7 +118,7 @@ function PreviewLightbox({ item, onClose }: { item: PreviewableItem; onClose: ()
       aria-label={`Preview of ${item.name}`}
     >
       <div
-        className="relative flex max-h-[90vh] w-full max-w-2xl flex-col overflow-hidden rounded-xl bg-card"
+        className="relative flex max-h-[95vh] w-full max-w-5xl flex-col overflow-hidden rounded-xl bg-card"
         onClick={(e) => e.stopPropagation()}
       >
         <button
@@ -138,17 +138,27 @@ function PreviewLightbox({ item, onClose }: { item: PreviewableItem; onClose: ()
           />
         </div>
 
-        <div className="flex flex-col gap-3 border-t border-border p-5 sm:flex-row sm:items-center sm:justify-between">
-          <div className="min-w-0">
-            <h4 className="font-heading text-base font-bold text-card-foreground">{item.name}</h4>
-            <p className="mt-0.5 font-mono text-xs text-muted-foreground">{item.code}</p>
-          </div>
-          <div className="shrink-0 sm:w-48">
-            <PriceLine code={item.code} />
-            <div className="mt-2">
-              <PurchaseCTA code={item.code} name={item.name} />
+        <div className="flex flex-col gap-4 border-t border-border p-5">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+            <div className="min-w-0">
+              <h4 className="font-heading text-base font-bold text-card-foreground">{item.name}</h4>
+              <p className="mt-0.5 font-mono text-xs text-muted-foreground">{item.code}</p>
+            </div>
+            <div className="shrink-0 sm:w-48">
+              <PriceLine code={item.code} />
+              <div className="mt-2">
+                <PurchaseCTA code={item.code} name={item.name} />
+              </div>
             </div>
           </div>
+          {item.description && (
+            <div className="border-t border-border pt-4">
+              <p className="mb-1.5 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                What this is &amp; when to use it
+              </p>
+              <p className="text-sm leading-relaxed text-muted-foreground">{item.description}</p>
+            </div>
+          )}
         </div>
       </div>
     </div>

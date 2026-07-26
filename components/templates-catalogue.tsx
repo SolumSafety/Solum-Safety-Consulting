@@ -149,9 +149,20 @@ function TemplateCard({ item }: { item: TemplateItem }) {
 function CompactRow({ item }: { item: TemplateItem }) {
   return (
     <article className="flex flex-col gap-3 rounded-lg border border-border bg-card p-4 sm:flex-row sm:items-center sm:justify-between">
-      <div className="min-w-0">
-        <h4 className="font-heading text-sm font-bold text-card-foreground">{item.name}</h4>
-        <p className="mt-0.5 text-sm leading-relaxed text-muted-foreground">{item.description}</p>
+      <div className="flex min-w-0 items-center gap-4">
+        {/* NEW — thumbnail, same convention as TemplateCard */}
+        <div className="relative aspect-[860/560] w-20 shrink-0 overflow-hidden rounded-md border border-border bg-muted sm:w-24">
+          <img
+            src={`/thumbnails/${item.code}.png`}
+            alt={`Preview of the ${item.name} guide`}
+            loading="lazy"
+            className="h-full w-full object-cover object-top"
+          />
+        </div>
+        <div className="min-w-0">
+          <h4 className="font-heading text-sm font-bold text-card-foreground">{item.name}</h4>
+          <p className="mt-0.5 text-sm leading-relaxed text-muted-foreground">{item.description}</p>
+        </div>
       </div>
       <div className="shrink-0 sm:w-44">
         <PriceLine code={item.code} />
@@ -162,7 +173,6 @@ function CompactRow({ item }: { item: TemplateItem }) {
     </article>
   )
 }
-
 type FolderId = "bundles" | "whs" | "project" | "generic" | "industry" | "leadership"
 
 const folderMeta: {

@@ -107,8 +107,34 @@ function PriceLine({ code, invert = false }: { code: string; invert?: boolean })
 /** Minimal shape every previewable item needs — works for TemplateItem, Bundle, and IndustryBundle. */
 type PreviewableItem = { name: string; code: string; description?: string }
 
-/** Full-screen preview overlay showing the watermarked first page. Shared across every card type. */
-function PreviewLightbox({ item, onClose }: { item: PreviewableItem; onClose: () => void }) {
+/** A single preview page image. Hides itself automatically if the file doesn't exist —
+ *  this is what lets items with fewer real pages (2-3) degrade gracefully when maxPages is 4. */
+function PreviewPageImage({ src, alt }: { src: string; alt: string }) {
+  const [failed, setFailed] = useState(false)
+  if (failed) return null
+  return (
+    <img
+      src={src}
+      alt={alt}
+      className="w-full border-b border-border last:border-b-0"
+      onError={() => setFailed(true)}
+    />
+  )
+}
+
+/** Full-screen preview overlay showing the watermarked page(s). Shared across every card type.
+ *  Pass maxPages > 1 to show a scrollable multi-page preview (e.g. leadership guides); pages
+ *  beyond what actually exists are hidden automatically, no fixed page count required. */
+function PreviewLightbox({
+  item,
+  onClose,
+  maxPages = 1,
+}: {
+  item: PreviewableItem
+  onClose: () => void
+  maxPages?: number
+}) {
+  const pageNumbers = Array.from({ length: maxPages }, (_, i) => i + 1)
   return (
     <div
       className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4"
@@ -131,11 +157,21 @@ function PreviewLightbox({ item, onClose }: { item: PreviewableItem; onClose: ()
         </button>
 
         <div className="overflow-y-auto">
-          <img
-            src={`/thumbnails/${item.code}.png`}
-            alt={`Watermarked preview of ${item.name}`}
-            className="w-full"
-          />
+          {maxPages > 1 ? (
+            pageNumbers.map((n) => (
+              <PreviewPageImage
+                key={n}
+                src={`/thumbnails/${item.code}-${n}.png`}
+                alt={`Watermarked preview of ${item.name}, page ${n}`}
+              />
+            ))
+          ) : (
+            <img
+              src={`/thumbnails/${item.code}.png`}
+              alt={`Watermarked preview of ${item.name}`}
+              className="w-full"
+            />
+          )}
         </div>
 
         <div className="flex flex-col gap-4 border-t border-border p-5">
@@ -165,9 +201,12 @@ function PreviewLightbox({ item, onClose }: { item: PreviewableItem; onClose: ()
   )
 }
 
-/** Reusable thumbnail box — the exact same image treatment used everywhere: TemplateCard, CompactRow, generic, and industry cards. */
-function PreviewThumbnail({ item }: { item: PreviewableItem }) {
+/** Reusable thumbnail box — the exact same image treatment used everywhere: TemplateCard, CompactRow, generic, and industry cards.
+ *  Pass maxPages > 1 for items that should open a multi-page preview (e.g. leadership guides). The
+ *  small always-visible card thumbnail always shows just page 1, regardless of maxPages. */
+function PreviewThumbnail({ item, maxPages = 1 }: { item: PreviewableItem; maxPages?: number }) {
   const [previewOpen, setPreviewOpen] = useState(false)
+  const thumbSrc = maxPages > 1 ? `/thumbnails/${item.code}-1.png` : `/thumbnails/${item.code}.png`
   return (
     <>
       <button
@@ -177,7 +216,7 @@ function PreviewThumbnail({ item }: { item: PreviewableItem }) {
         aria-label={`Preview ${item.name}`}
       >
         <img
-          src={`/thumbnails/${item.code}.png`}
+          src={thumbSrc}
           alt={`Preview of ${item.name}`}
           loading="lazy"
           className="h-full w-full object-cover object-top"
@@ -189,19 +228,21 @@ function PreviewThumbnail({ item }: { item: PreviewableItem }) {
         <span className="absolute inset-0 flex items-center justify-center bg-black/0 opacity-0 transition-all group-hover:bg-black/20 group-hover:opacity-100">
           <span className="flex items-center gap-1.5 rounded-full bg-background/95 px-3 py-1.5 text-xs font-semibold text-foreground shadow-sm">
             <ZoomIn className="h-3.5 w-3.5" aria-hidden="true" />
-            Click to preview
+            {maxPages > 1 ? "Click to preview all pages" : "Click to preview"}
           </span>
         </span>
       </button>
-      {previewOpen && <PreviewLightbox item={item} onClose={() => setPreviewOpen(false)} />}
+      {previewOpen && (
+        <PreviewLightbox item={item} onClose={() => setPreviewOpen(false)} maxPages={maxPages} />
+      )}
     </>
   )
 }
 
-function TemplateCard({ item }: { item: TemplateItem }) {
+function TemplateCard({ item, maxPages = 1 }: { item: TemplateItem; maxPages?: number }) {
   return (
     <article className="flex flex-col overflow-hidden rounded-xl border border-border bg-card transition-shadow hover:shadow-md">
-      <PreviewThumbnail item={item} />
+      <PreviewThumbnail item={item} maxPages={maxPages} />
 
       <div className="flex flex-1 flex-col p-6">
         <h4 className="font-heading text-base font-bold leading-snug text-card-foreground">{item.name}</h4>
@@ -230,12 +271,12 @@ function TemplateCard({ item }: { item: TemplateItem }) {
 }
 
 /** A compact list row used for the "additional" leadership guides. */
-function CompactRow({ item }: { item: TemplateItem }) {
+function CompactRow({ item, maxPages = 1 }: { item: TemplateItem; maxPages?: number }) {
   return (
     <article className="flex flex-col gap-3 rounded-lg border border-border bg-card p-4 sm:flex-row sm:items-center sm:justify-between">
       <div className="flex min-w-0 items-center gap-4">
         <div className="w-20 shrink-0 overflow-hidden rounded-md sm:w-24">
-          <PreviewThumbnail item={item} />
+          <PreviewThumbnail item={item} maxPages={maxPages} />
         </div>
         <div className="min-w-0">
           <h4 className="font-heading text-sm font-bold text-card-foreground">{item.name}</h4>
@@ -680,7 +721,7 @@ export function TemplatesCatalogue() {
                     </h3>
                     <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
                       {filteredLeadership.slice(0, LEADERSHIP_FEATURED).map((item) => (
-                        <TemplateCard key={item.code} item={item} />
+                        <TemplateCard key={item.code} item={item} maxPages={4} />
                       ))}
                     </div>
                   </div>
@@ -695,7 +736,7 @@ export function TemplatesCatalogue() {
                       </h3>
                       <div className="grid gap-3">
                         {filteredLeadership.slice(LEADERSHIP_FEATURED).map((item) => (
-                          <CompactRow key={item.code} item={item} />
+                          <CompactRow key={item.code} item={item} maxPages={4} />
                         ))}
                       </div>
                     </div>

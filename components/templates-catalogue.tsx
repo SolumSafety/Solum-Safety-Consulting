@@ -15,6 +15,8 @@ import {
   Factory,
   HeartHandshake,
   Sparkles,
+  X,
+  ZoomIn,
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { BuyButton } from "@/components/buy-button"
@@ -102,14 +104,71 @@ function PriceLine({ code, invert = false }: { code: string; invert?: boolean })
   )
 }
 
-function TemplateCard({ item }: { item: TemplateItem }) {
+/** Minimal shape every previewable item needs — works for TemplateItem, Bundle, and IndustryBundle. */
+type PreviewableItem = { name: string; code: string }
+
+/** Full-screen preview overlay showing the watermarked first page. Shared across every card type. */
+function PreviewLightbox({ item, onClose }: { item: PreviewableItem; onClose: () => void }) {
   return (
-    <article className="flex flex-col overflow-hidden rounded-xl border border-border bg-card transition-shadow hover:shadow-md">
-      {/* Live preview of the digital form */}
-      <div className="relative aspect-[860/560] w-full overflow-hidden border-b border-border bg-muted">
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4"
+      onClick={onClose}
+      role="dialog"
+      aria-modal="true"
+      aria-label={`Preview of ${item.name}`}
+    >
+      <div
+        className="relative flex max-h-[90vh] w-full max-w-2xl flex-col overflow-hidden rounded-xl bg-card"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <button
+          type="button"
+          onClick={onClose}
+          aria-label="Close preview"
+          className="absolute right-3 top-3 z-10 flex h-9 w-9 items-center justify-center rounded-full bg-background/90 text-foreground shadow-sm backdrop-blur transition-colors hover:bg-background"
+        >
+          <X className="h-5 w-5" aria-hidden="true" />
+        </button>
+
+        <div className="overflow-y-auto">
+          <img
+            src={`/thumbnails/${item.code}.png`}
+            alt={`Watermarked preview of ${item.name}`}
+            className="w-full"
+          />
+        </div>
+
+        <div className="flex flex-col gap-3 border-t border-border p-5 sm:flex-row sm:items-center sm:justify-between">
+          <div className="min-w-0">
+            <h4 className="font-heading text-base font-bold text-card-foreground">{item.name}</h4>
+            <p className="mt-0.5 font-mono text-xs text-muted-foreground">{item.code}</p>
+          </div>
+          <div className="shrink-0 sm:w-48">
+            <PriceLine code={item.code} />
+            <div className="mt-2">
+              <PurchaseCTA code={item.code} name={item.name} />
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+/** Reusable thumbnail box — the exact same image treatment used everywhere: TemplateCard, CompactRow, generic, and industry cards. */
+function PreviewThumbnail({ item }: { item: PreviewableItem }) {
+  const [previewOpen, setPreviewOpen] = useState(false)
+  return (
+    <>
+      <button
+        type="button"
+        onClick={() => setPreviewOpen(true)}
+        className="group relative aspect-[860/560] w-full overflow-hidden rounded-t-xl border-b border-border bg-muted"
+        aria-label={`Preview ${item.name}`}
+      >
         <img
           src={`/thumbnails/${item.code}.png`}
-          alt={`Preview of the ${item.name} digital form`}
+          alt={`Preview of ${item.name}`}
           loading="lazy"
           className="h-full w-full object-cover object-top"
         />
@@ -117,7 +176,22 @@ function TemplateCard({ item }: { item: TemplateItem }) {
           <Lock className="h-3 w-3" aria-hidden="true" />
           Licensed
         </span>
-      </div>
+        <span className="absolute inset-0 flex items-center justify-center bg-black/0 opacity-0 transition-all group-hover:bg-black/20 group-hover:opacity-100">
+          <span className="flex items-center gap-1.5 rounded-full bg-background/95 px-3 py-1.5 text-xs font-semibold text-foreground shadow-sm">
+            <ZoomIn className="h-3.5 w-3.5" aria-hidden="true" />
+            Click to preview
+          </span>
+        </span>
+      </button>
+      {previewOpen && <PreviewLightbox item={item} onClose={() => setPreviewOpen(false)} />}
+    </>
+  )
+}
+
+function TemplateCard({ item }: { item: TemplateItem }) {
+  return (
+    <article className="flex flex-col overflow-hidden rounded-xl border border-border bg-card transition-shadow hover:shadow-md">
+      <PreviewThumbnail item={item} />
 
       <div className="flex flex-1 flex-col p-6">
         <h4 className="font-heading text-base font-bold leading-snug text-card-foreground">{item.name}</h4>
@@ -150,14 +224,8 @@ function CompactRow({ item }: { item: TemplateItem }) {
   return (
     <article className="flex flex-col gap-3 rounded-lg border border-border bg-card p-4 sm:flex-row sm:items-center sm:justify-between">
       <div className="flex min-w-0 items-center gap-4">
-        {/* NEW — thumbnail, same convention as TemplateCard */}
-        <div className="relative aspect-[860/560] w-20 shrink-0 overflow-hidden rounded-md border border-border bg-muted sm:w-24">
-          <img
-            src={`/thumbnails/${item.code}.png`}
-            alt={`Preview of the ${item.name} guide`}
-            loading="lazy"
-            className="h-full w-full object-cover object-top"
-          />
+        <div className="w-20 shrink-0 overflow-hidden rounded-md sm:w-24">
+          <PreviewThumbnail item={item} />
         </div>
         <div className="min-w-0">
           <h4 className="font-heading text-sm font-bold text-card-foreground">{item.name}</h4>
@@ -173,6 +241,7 @@ function CompactRow({ item }: { item: TemplateItem }) {
     </article>
   )
 }
+
 type FolderId = "bundles" | "whs" | "project" | "generic" | "industry" | "leadership"
 
 const folderMeta: {
@@ -533,16 +602,19 @@ export function TemplatesCatalogue() {
                     .map((b) => (
                       <article
                         key={b.code}
-                        className="flex flex-col rounded-xl border border-border bg-card p-6"
+                        className="flex flex-col overflow-hidden rounded-xl border border-border bg-card transition-shadow hover:shadow-md"
                       >
-                        <h3 className="font-heading text-lg font-bold text-card-foreground">{b.name}</h3>
-                        <p className="mt-1 font-mono text-xs text-muted-foreground">{b.code}</p>
-                        <p className="mt-3 flex-1 text-sm leading-relaxed text-muted-foreground">
-                          {b.description}
-                        </p>
-                        <PriceLine code={b.code} />
-                        <div className="mt-5">
-                          <PurchaseCTA code={b.code} name={b.name} />
+                        <PreviewThumbnail item={b} />
+                        <div className="flex flex-1 flex-col p-6">
+                          <h3 className="font-heading text-lg font-bold text-card-foreground">{b.name}</h3>
+                          <p className="mt-1 font-mono text-xs text-muted-foreground">{b.code}</p>
+                          <p className="mt-3 flex-1 text-sm leading-relaxed text-muted-foreground">
+                            {b.description}
+                          </p>
+                          <PriceLine code={b.code} />
+                          <div className="mt-4">
+                            <PurchaseCTA code={b.code} name={b.name} />
+                          </div>
                         </div>
                       </article>
                     ))}
@@ -568,14 +640,21 @@ export function TemplatesCatalogue() {
                     {filteredIndustry.map((b) => (
                       <article
                         key={b.code}
-                        className="flex flex-col gap-3 rounded-lg border border-border bg-card px-4 py-4"
+                        className="flex flex-col gap-3 rounded-lg border border-border bg-card px-4 py-4 sm:flex-row sm:items-center"
                       >
-                        <div>
+                        <div className="w-full shrink-0 overflow-hidden rounded-md sm:w-24">
+                          <PreviewThumbnail item={b} />
+                        </div>
+                        <div className="min-w-0 flex-1">
                           <span className="block text-sm font-semibold text-card-foreground">{b.name}</span>
                           <span className="block font-mono text-xs text-muted-foreground">{b.code}</span>
                         </div>
-                        <PriceLine code={b.code} />
-                        <PurchaseCTA code={b.code} name={b.name} />
+                        <div className="shrink-0 sm:w-36">
+                          <PriceLine code={b.code} />
+                          <div className="mt-2">
+                            <PurchaseCTA code={b.code} name={b.name} />
+                          </div>
+                        </div>
                       </article>
                     ))}
                   </div>

@@ -518,10 +518,13 @@ export function TemplatesCatalogue() {
             />
             <input
               type="search"
+              id="templates-search"
+              name="templates-search"
               value={query}
               onChange={(e) => setQuery(e.target.value)}
               placeholder="Search all folders by name or code…"
               aria-label="Search templates"
+              autoComplete="off"
               className="w-full rounded-lg border border-input bg-card py-2.5 pl-10 pr-3 text-sm text-foreground outline-none transition-colors focus:border-ring focus:ring-2 focus:ring-ring/30"
             />
           </div>
@@ -721,7 +724,7 @@ export function TemplatesCatalogue() {
                     </h3>
                     <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
                       {filteredLeadership.slice(0, LEADERSHIP_FEATURED).map((item) => (
-                        <TemplateCard key={item.code} item={item} maxPages={4} />
+                        <TemplateCard key={item.code} item={item} />
                       ))}
                     </div>
                   </div>
@@ -736,7 +739,7 @@ export function TemplatesCatalogue() {
                       </h3>
                       <div className="grid gap-3">
                         {filteredLeadership.slice(LEADERSHIP_FEATURED).map((item) => (
-                          <CompactRow key={item.code} item={item} maxPages={4} />
+                          <CompactRow key={item.code} item={item} />
                         ))}
                       </div>
                     </div>

@@ -59,7 +59,7 @@ export default async function BlogPostPage({ params }: { params: Promise<{ slug:
               prose-headings:font-heading prose-headings:font-bold prose-headings:text-[#16294D]
               prose-h2:mt-12 prose-h2:border-l-4 prose-h2:border-[#18707F] prose-h2:pl-4 prose-h2:text-2xl prose-h2:leading-tight
               prose-h3:mt-8 prose-h3:text-[#18707F] prose-h3:text-lg
-              prose-p:leading-relaxed prose-p:text-[#3C4759]
+              prose-p:leading-[1.5] prose-p:mt-[1.5em] prose-p:text-[#3C4759]
               prose-a:text-[#18707F] prose-a:font-medium prose-a:no-underline hover:prose-a:underline
               prose-strong:text-[#16294D] prose-strong:font-semibold
               prose-li:text-[#3C4759] prose-li:leading-relaxed

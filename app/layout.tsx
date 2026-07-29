@@ -3,13 +3,11 @@ import type { Metadata, Viewport } from 'next'
 import { Archivo } from 'next/font/google'
 import './globals.css'
 import { CartRoot } from '@/components/cart-root'
-
 const archivo = Archivo({
   subsets: ['latin'],
   variable: '--font-archivo',
   weight: ['400', '500', '600', '700', '800', '900'],
 })
-
 export const metadata: Metadata = {
   title: 'Solum Safety Consulting | WHS & OHS Consultants Australia',
   description:
@@ -35,6 +33,9 @@ export const metadata: Metadata = {
   alternates: {
     canonical: '/',
   },
+  verification: {
+    google: 'google3d07fcfaa24182ff',
+  },
   openGraph: {
     title: 'Solum Safety Consulting | WHS & OHS Consultants Australia',
     description:
@@ -51,14 +52,12 @@ export const metadata: Metadata = {
       'Expert workplace health and safety consulting across Australia. Audits, management systems, risk assessments, templates, and gap analysis.',
   },
 }
-
 export const viewport: Viewport = {
   colorScheme: 'light',
   themeColor: '#2c3829',
 }
 
 const siteUrl = 'https://www.solumsafetyconsulting.com.au'
-
 const structuredData = {
   '@context': 'https://schema.org',
   '@graph': [
@@ -93,7 +92,6 @@ const structuredData = {
     },
   ],
 }
-
 export default function RootLayout({
   children,
 }: Readonly<{

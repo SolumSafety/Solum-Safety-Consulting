@@ -4,6 +4,7 @@ import Link from "next/link"
 import { ChevronLeft, ArrowRight } from "lucide-react"
 import { SiteHeader } from "@/components/site-header"
 import { SiteFooter } from "@/components/site-footer"
+import { SampleReportCard } from "@/components/sample-report-card"
 import { serviceTiers, sampleReports } from "@/lib/site"
 
 export const metadata: Metadata = {
@@ -86,29 +87,13 @@ export default function ReportsPage() {
 
             <div className="mt-12 grid gap-8 md:grid-cols-2">
               {sampleReports.map((report) => (
-                <article
+                <SampleReportCard
                   key={report.title}
-                  className="overflow-hidden rounded-2xl border border-border bg-card"
-                >
-                  <div className="relative aspect-[907/540] w-full border-b border-border bg-muted">
-                    <Image
-                      src={report.cover || "/placeholder.svg"}
-                      alt={`${report.title} sample report cover`}
-                      fill
-                      className="object-cover object-top"
-                    />
-                    <span className="absolute left-4 top-4 rounded-full bg-terracotta px-3 py-1 text-[10px] font-bold uppercase tracking-[0.15em] text-terracotta-foreground">
-                      {report.tier}
-                    </span>
-                  </div>
-                  <div className="p-7">
-                    <span className="text-xs font-semibold uppercase tracking-[0.15em] text-muted-foreground">
-                      Sample report
-                    </span>
-                    <h3 className="mt-2 font-heading text-xl font-bold text-card-foreground">{report.title}</h3>
-                    <p className="mt-3 text-sm leading-relaxed text-muted-foreground">{report.description}</p>
-                  </div>
-                </article>
+                  cover={report.cover}
+                  tier={report.tier}
+                  title={report.title}
+                  description={report.description}
+                />
               ))}
             </div>
           </div>

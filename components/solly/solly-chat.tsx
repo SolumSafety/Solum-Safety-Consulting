@@ -2,10 +2,17 @@
 
 import { useEffect, useRef, useState } from "react"
 import Image from "next/image"
+import DOMPurify from "isomorphic-dompurify"
 import { Send, FileCheck2, Lock, Unlock, Loader2, ShieldCheck, ShoppingBag, Camera, Mic, MicOff, AlertTriangle, ArrowLeft } from "lucide-react"
 
 // ---------------------------------------------------------------------------
 // Solly — the WHS Agent chat interface.
+//
+// SECURITY FIX: previewHtml (AI-generated document content) is now
+// sanitized with DOMPurify before rendering via dangerouslySetInnerHTML.
+// Previously rendered raw — a real XSS risk, since this content
+// originates from an AI drafting process that could be influenced by
+// adversarial input during the intake conversation.
 //
 // Design tokens (see design notes at bottom of file for rationale):
 //   navy    #16294D   primary / Solly's voice
@@ -19,12 +26,12 @@ import { Send, FileCheck2, Lock, Unlock, Loader2, ShieldCheck, ShoppingBag, Came
 type ChatMessage = { role: "user" | "assistant"; content: string }
 
 type Phase =
-  | "intake" // free conversation, Solly asking questions
-  | "recommended" // Solly proposed templates, awaiting client confirmation
-  | "drafting" // draft in progress
-  | "ready_for_purchase" // watermarked previews ready
-  | "unlocked" // entitlement or purchase completed, final docs available
-  | "checkout" // sent to Stripe for one-off purchase
+  | "intake"
+  | "recommended"
+  | "drafting"
+  | "ready_for_purchase"
+  | "unlocked"
+  | "checkout"
 
 type DraftResult = { formCode: string; sessionId: string; previewHtml: string }
 type UnlockedDoc = { formCode: string; sessionId: string; finalHtml?: string }
@@ -36,6 +43,14 @@ const STAMP_LABEL: Record<Phase, string> = {
   ready_for_purchase: "DRAFT — LOCKED",
   unlocked: "UNLOCKED",
   checkout: "AWAITING PAYMENT",
+}
+
+// Only the formatting a drafted WHS document actually needs — nothing
+// that can execute (no script, no event handlers, no iframes/objects,
+// no style attribute that could carry expression()-style tricks).
+const SANITIZE_CONFIG = {
+  ALLOWED_TAGS: ["p", "br", "strong", "em", "u", "h1", "h2", "h3", "h4", "ul", "ol", "li", "table", "thead", "tbody", "tr", "th", "td", "span", "div", "a"],
+  ALLOWED_ATTR: ["href", "class", "target", "rel"],
 }
 
 export default function SollyChat({ clientEmail: initialEmail }: { clientEmail?: string }) {
@@ -73,10 +88,6 @@ export default function SollyChat({ clientEmail: initialEmail }: { clientEmail?:
   const fileInputRef = useRef<HTMLInputElement>(null)
   const recognitionRef = useRef<any>(null)
 
-  // Owner-only rate limit bypass: visit /solly?key=YOUR_KEY once, it's
-  // remembered locally after that. Never shown or exposed to other clients.
-  // Owner-only rate limit bypass: visit /solly?key=YOUR_KEY once, it's
-  // remembered locally after that. Never shown or exposed to other clients.
   useEffect(() => {
     const params = new URLSearchParams(window.location.search)
     const fromUrl = params.get("key")
@@ -117,9 +128,6 @@ export default function SollyChat({ clientEmail: initialEmail }: { clientEmail?:
     scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: "smooth" })
   }, [messages, phase])
 
-  // Web Speech API — Chrome/Edge/most Android browsers support this; Safari
-  // has partial support, Firefox doesn't. The mic button only appears if
-  // the browser actually supports it, rather than showing a broken button.
   useEffect(() => {
     const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition
     setVoiceSupported(!!SpeechRecognition)
@@ -806,7 +814,7 @@ function DraftPreviewPanel({
       <div className="relative max-h-72 overflow-y-auto rounded-lg border border-[#E4DFD3] bg-[#FAFAF7] p-3">
         <div
           className="prose prose-sm max-w-none [&_*]:!text-[13px]"
-          dangerouslySetInnerHTML={{ __html: active?.previewHtml ?? "" }}
+          dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(active?.previewHtml ?? "", SANITIZE_CONFIG) }}
         />
       </div>
 
@@ -874,24 +882,3 @@ function UnlockedPanel({ docs }: { docs: UnlockedDoc[] }) {
     </div>
   )
 }
-
-/*
-DESIGN NOTES
-------------
-Palette pulled directly from the live Solly icon (navy #16294D / teal #18707F
-/ gold #C9A84C on warm cream #F6F4EF) rather than introducing a new one —
-this widget needs to feel like part of the existing brand, not a bolted-on
-AI feature.
-
-Signature element: the status "stamp" (top-right pill: GATHERING DETAILS /
-DRAFTING / DRAFT — LOCKED / UNLOCKED) and the lock/unlock iconography on the
-draft panel are drawn from the WHS domain itself — compliance documents get
-stamped, signed off, and version-controlled. That's a more honest signature
-for this subject than a generic chat-bubble treatment, and it does real
-work: at a glance the client knows exactly what state their document is in.
-
-Restraint: no gradients, no page-load animation, one spinner (Loader2) used
-sparingly for actual async waits. The watermark itself (applied server-side
-in the draft route) already does visual work signalling "not final" — the
-UI doesn't need to compete with it.
-*/

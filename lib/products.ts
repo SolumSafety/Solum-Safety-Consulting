@@ -7,7 +7,7 @@ import {
 } from "./catalogue"
 import { PRODUCT_FILES } from "./product-files"
 import { PRODUCT_PRICES } from "./product-prices"
-import { TIER2_CODE, ASSESSMENT_SITE_URL } from "./site"
+import { REPORT_DRAFTING_NOTICE, TIER2_CODE, ASSESSMENT_SITE_URL } from "./site"
 export type ProductCategory = "bundle" | "industry" | "whs" | "project" | "leadership" | "service"
 
 export type PurchasableProduct = {
@@ -82,7 +82,7 @@ function build(): PurchasableProduct[] {
     code: TIER2_CODE,
     name: "Tier 2 - Internal Desktop WHS Gap Analysis",
     description:
-      "Online WHS maturity self-assessment completed by your team and submitted to Solum Safety Consulting for independent desktop review, maturity rating and corrective action plan.",
+      `Online WHS maturity self-assessment completed by your team and submitted to Solum Safety Consulting for independent desktop review, maturity rating and corrective action plan. ${REPORT_DRAFTING_NOTICE}`,
     category: "service",
     formats: ["Online assessment"],
     priceInCents: PRICES[TIER2_CODE] ?? null,

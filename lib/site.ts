@@ -211,6 +211,10 @@ export const ASSESSMENT_SITE_URL =
 /** Returning clients log back in to their assessment here. */
 export const ASSESSMENT_LOGIN_HREF = `${ASSESSMENT_SITE_URL}/login`
 
+/** Customer-facing assurance for all WHS Gap Analysis report drafts. */
+export const REPORT_DRAFTING_NOTICE =
+  'Every WHS Gap Analysis report is AI-drafted and quality-assured by our safety consultants before the report draft is released to you.'
+
 export const serviceTiers: {
   tier: string
   title: string
@@ -235,6 +239,7 @@ export const serviceTiers: {
       'Completed online using your own knowledge, systems and evidence',
       'Submitted to Solum for an independent desktop review',
       'A detailed report based on the evidence you provide',
+      REPORT_DRAFTING_NOTICE,
       'Maturity rating and corrective action plan included',
     ],
     outcome:
@@ -253,6 +258,7 @@ export const serviceTiers: {
       'Review of implementation, controls and workplace behaviours',
       'Independent assessment of compliance and performance',
       'Formal WHS assurance outcome',
+      REPORT_DRAFTING_NOTICE,
     ],
     outcome:
       'Confirms your systems are working as intended and reduces risk to both your projects and the wider business.',

@@ -5,7 +5,7 @@ import { ChevronLeft, ArrowRight } from "lucide-react"
 import { SiteHeader } from "@/components/site-header"
 import { SiteFooter } from "@/components/site-footer"
 import { SampleReportCard } from "@/components/sample-report-card"
-import { serviceTiers, sampleReports } from "@/lib/site"
+import { REPORT_DRAFTING_NOTICE, serviceTiers, sampleReports } from "@/lib/site"
 
 export const metadata: Metadata = {
   title: "Example Reports | Solum Safety Consulting",
@@ -53,6 +53,9 @@ export default function ReportsPage() {
               Every WHS Gap Analysis is delivered as a clear, board-ready report, with evidence-based
               scoring, prioritised actions and a defensible audit trail. Below are representative samples
               showing the first pages of each tier.
+            </p>
+            <p className="mt-4 max-w-2xl text-sm font-medium leading-relaxed text-primary-foreground/90">
+              {REPORT_DRAFTING_NOTICE}
             </p>
           </div>
         </section>

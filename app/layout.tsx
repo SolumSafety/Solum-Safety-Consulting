@@ -1,8 +1,12 @@
 import { Analytics } from '@vercel/analytics/next'
 import type { Metadata, Viewport } from 'next'
 import { Archivo } from 'next/font/google'
+import Script from 'next/script'
 import './globals.css'
 import { CartRoot } from '@/components/cart-root'
+
+const GOOGLE_ADS_TAG_ID = 'AW-18380861171'
+
 const archivo = Archivo({
   subsets: ['latin'],
   variable: '--font-archivo',
@@ -100,6 +104,15 @@ export default function RootLayout({
   return (
     <html lang="en-AU" className={`light ${archivo.variable} bg-background`}>
       <body className="font-sans antialiased">
+        <Script src={`https://www.googletagmanager.com/gtag/js?id=${GOOGLE_ADS_TAG_ID}`} strategy="afterInteractive" />
+        <Script id="google-ads-tag" strategy="afterInteractive">
+          {`
+            window.dataLayer = window.dataLayer || [];
+            function gtag(){window.dataLayer.push(arguments);}
+            gtag('js', new Date());
+            gtag('config', '${GOOGLE_ADS_TAG_ID}');
+          `}
+        </Script>
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{ __html: JSON.stringify(structuredData) }}

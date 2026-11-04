@@ -139,6 +139,13 @@ export default function PoliciesPage() {
                     company, ABN and the details of your enquiry or order. We may also collect limited technical
                     data (such as browser and usage analytics) when you use this website.
                   </p>
+                  <h3 className="mt-6 text-sm font-bold text-foreground">Apollo business visitor identification</h3>
+                  <p className="mt-3 text-sm leading-relaxed text-muted-foreground">
+                    We use Apollo&apos;s website tracker and share website visit and technical data with Apollo to
+                    understand which businesses are interested in our services. Apollo may identify the companies
+                    visiting our website globally; identification of individual business visitors is limited to
+                    visitors in the United States.
+                  </p>
                   <h3 className="mt-6 text-sm font-bold text-foreground">How we use it</h3>
                   <Bullets
                     items={[

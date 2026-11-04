@@ -5,6 +5,7 @@ import { stripe } from "@/lib/stripe"
 import { getSupabaseAdmin } from "@/lib/supabase-admin"
 import { decodeCodesFromMetadata } from "@/lib/checkout"
 import { SOLLY_PACKAGE_SKU } from "@/lib/solly-entitlement"
+import { notifyPaidPurchase } from "@/lib/purchase-notifications"
 
 export const runtime = "nodejs"
 
@@ -21,7 +22,8 @@ async function grantEntitlement(email: string, sessionId: string, paymentIntent:
       stripe_session_id: sessionId,
       stripe_payment_intent: paymentIntent,
     },
-    { onConflict: "stripe_session_id" },
+    // Never overwrite an existing entitlement, especially after a refund.
+    { onConflict: "stripe_session_id", ignoreDuplicates: true },
   )
   if (error) console.log("[webhook] Failed to grant entitlement:", error.message)
 }
@@ -61,7 +63,7 @@ async function unlockSollyDocuments(conversationId: string, codes: string[], ses
   const supabaseAdmin = getSupabaseAdmin()
   if (!supabaseAdmin) return
 
-  const { data: purchase } = await supabaseAdmin
+  const { data: createdPurchase, error: purchaseError } = await supabaseAdmin
     .from("form_purchases")
     .upsert(
       {
@@ -73,15 +75,27 @@ async function unlockSollyDocuments(conversationId: string, codes: string[], ses
         stripe_checkout_session_id: sessionId,
         conversation_id: conversationId,
       },
-      { onConflict: "stripe_checkout_session_id" },
+      { onConflict: "stripe_checkout_session_id", ignoreDuplicates: true },
     )
-    .select("id")
-    .single()
+    .select("id,status")
+    .maybeSingle()
+  if (purchaseError) throw new Error(`Could not record document purchase: ${purchaseError.message}`)
+
+  const { data: existingPurchase, error: existingError } = createdPurchase
+    ? { data: createdPurchase, error: null }
+    : await supabaseAdmin
+        .from("form_purchases")
+        .select("id,status")
+        .eq("stripe_checkout_session_id", sessionId)
+        .maybeSingle()
+  if (existingError) throw new Error(`Could not check document purchase: ${existingError.message}`)
+  // A notification retry must never re-unlock a refunded/revoked purchase.
+  if (!existingPurchase || existingPurchase.status !== "paid") return
 
   for (const code of codes) {
     await supabaseAdmin
       .from("form_sessions")
-      .update({ status: "delivered", form_purchase_id: purchase?.id ?? null, updated_at: new Date().toISOString() })
+      .update({ status: "delivered", form_purchase_id: existingPurchase.id, updated_at: new Date().toISOString() })
       .eq("conversation_id", conversationId)
       .eq("form_code", code)
   }
@@ -128,9 +142,11 @@ export async function POST(request: NextRequest) {
   }
 
   try {
-    if (event.type === "checkout.session.completed") {
+    if (event.type === "checkout.session.completed" || event.type === "checkout.session.async_payment_succeeded") {
       const session = event.data.object as Stripe.Checkout.Session
-      if (session.payment_status !== "paid") return NextResponse.json({ received: true })
+      if (session.payment_status !== "paid") {
+        return NextResponse.json({ received: true })
+      }
 
       const email = session.customer_details?.email ?? session.customer_email ?? null
       const paymentIntent =
@@ -174,13 +190,23 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    return NextResponse.json({ received: true })
   } catch (err) {
     console.log("[webhook] Handler error:", err instanceof Error ? err.message : err)
-    // Still 200 so Stripe doesn't retry-storm us for a bug on our side;
-    // errors are logged for manual follow-up instead.
-    return NextResponse.json({ received: true, error: "logged" })
+    // Preserve the existing fulfilment error policy, but do not let an
+    // unrelated fulfilment problem prevent the owner purchase notification.
   }
+
+  if (event.type === "checkout.session.completed" || event.type === "checkout.session.async_payment_succeeded") {
+    try {
+      await notifyPaidPurchase(event.data.object as Stripe.Checkout.Session)
+    } catch (err) {
+      console.error("[webhook] Purchase notification failed:", err instanceof Error ? err.message : "Unknown notification error")
+      // Do not acknowledge a failed email. Stripe retries; provider
+      // idempotency and the durable session marker prevent duplicate sends.
+      return NextResponse.json({ error: "Purchase notification failed; retry required." }, { status: 500 })
+    }
+  }
+  return NextResponse.json({ received: true })
 }
 
 // Static Payment Links (like the credits pack) don't carry custom metadata.

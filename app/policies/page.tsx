@@ -146,6 +146,12 @@ export default function PoliciesPage() {
                     visiting our website globally; identification of individual business visitors is limited to
                     visitors in the United States.
                   </p>
+                  <h3 className="mt-6 text-sm font-bold text-foreground">Leadfeeder business visitor analytics</h3>
+                  <p className="mt-3 text-sm leading-relaxed text-muted-foreground">
+                    We use Leadfeeder&apos;s website tracker and share website visit and technical data with
+                    Leadfeeder for business and company visitor analytics, helping us understand which
+                    organisations are interested in our services.
+                  </p>
                   <h3 className="mt-6 text-sm font-bold text-foreground">How we use it</h3>
                   <Bullets
                     items={[
@@ -309,7 +315,7 @@ export default function PoliciesPage() {
                 </article>
 
                 <p className="border-t border-border pt-6 text-xs leading-relaxed text-muted-foreground">
-                  Last updated: June 2026. &copy; {new Date().getFullYear()} Solum Safety Consulting. These
+                  Last updated: November 2026. &copy; {new Date().getFullYear()} Solum Safety Consulting. These
                   policies are provided as general information for our customers and do not themselves constitute
                   legal advice.
                 </p>

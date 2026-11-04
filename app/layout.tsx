@@ -170,6 +170,34 @@ export default function RootLayout({
         />
         <CartRoot>{children}</CartRoot>
         {process.env.NODE_ENV === 'production' && <Analytics />}
+        <Script id="leadfeeder-website-tracker" strategy="afterInteractive">
+          {`
+            (function(ss,ex){
+              window.ldfdr=window.ldfdr||function(){(ldfdr._q=ldfdr._q||[]).push([].slice.call(arguments));};
+              (function(d,s){
+                // Keep one SDK request per document, including client-side navigation.
+                if (window.__solumLeadfeederTrackerRequested) return;
+                var src='https://sc.lfeeder.com/lftracker_v1_'+ss+(ex?'_'+ex:'')+'.js';
+                var scripts=d.getElementsByTagName(s);
+                for (var i=0;i<scripts.length;i++) {
+                  if (scripts[i].src===src) {
+                    window.__solumLeadfeederTrackerRequested=true;
+                    return;
+                  }
+                }
+                window.__solumLeadfeederTrackerRequested=true;
+                var fs=scripts[0];
+                function ce(src){
+                  var cs=d.createElement(s);
+                  cs.src=src;
+                  cs.async=1;
+                  fs.parentNode.insertBefore(cs,fs);
+                };
+                ce(src);
+              })(document,'script');
+            })('ywVkO4XX1Ze4Z6Bj');
+          `}
+        </Script>
       </body>
     </html>
   )

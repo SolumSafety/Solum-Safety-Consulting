@@ -21,6 +21,12 @@ import {
   templateInclusions,
   focusAreas,
   TIER2_CODE,
+  TIER2_REVIEW_HEADLINE,
+  TIER2_DESCRIPTION,
+  REPORT_DRAFTING_NOTICE,
+  TIER2_PRICE_INCLUSIONS,
+  TIER2_ACCESS_NOTICE,
+  TIER2_SCOPE_NOTICE,
   ASSESSMENT_LOGIN_HREF,
 } from "@/lib/site"
 import { getProduct, formatPrice } from "@/lib/products"
@@ -28,12 +34,12 @@ import { getProduct, formatPrice } from "@/lib/products"
 export const metadata: Metadata = {
   title: "WHS Management & Advice | Solum Safety Consulting",
   description:
-    "Practical WHS management, gap analysis and advice to help you stay compliant, reduce risk and run safer operations. Tier 2 online assessment and Tier 3 field verification, templates and system development.",
+    "Practical WHS management and advice, with Tier 2 consultant-reviewed desktop assessment and pre-release report quality assurance, Tier 3 field verification, templates and system development.",
   alternates: { canonical: "/services" },
   openGraph: {
     title: "WHS Management & Advice | Solum Safety Consulting",
     description:
-      "Practical WHS management, gap analysis and advice. Tier 2 online assessment, Tier 3 field verification, templates and system development.",
+      "Practical WHS management and advice. Tier 2 consultant-reviewed desktop assessment with pre-release report quality assurance, Tier 3 field verification, templates and system development.",
     url: "/services",
     type: "website",
   },
@@ -93,19 +99,20 @@ export default function ServicesPage() {
                   WHS Gap Analysis
                 </span>
                 <h2 className="mt-3 text-balance font-heading text-3xl font-black tracking-tight text-foreground md:text-4xl">
-                  Understand your position. Improve your maturity.
+                  {TIER2_REVIEW_HEADLINE}
                 </h2>
                 <p className="mt-4 leading-relaxed text-muted-foreground">
-                  We carry out structured WHS Gap Analysis assessments to help you understand your current
-                  position and improve your risk maturity, which reduces risk to you, your staff and your
-                  organisation.
+                  {TIER2_DESCRIPTION}
+                </p>
+                <p className="mt-4 rounded-lg bg-muted px-4 py-3 text-sm leading-relaxed text-foreground">
+                  {REPORT_DRAFTING_NOTICE}
                 </p>
                 <ul className="mt-6 grid gap-3">
                   {[
-                    "Identify gaps across your WHS systems",
-                    "Improve your WHS maturity rating",
-                    "Prioritise practical corrective actions",
-                    "Strengthen compliance and governance",
+                    "Independent desktop review of your submitted assessment",
+                    "Detailed report based on the information and evidence supplied",
+                    "WHS maturity ratings and corrective action plan",
+                    "Safety consultant quality assurance before draft release",
                   ].map((item) => (
                     <li key={item} className="flex items-start gap-3">
                       <span className="mt-0.5 flex h-5 w-5 flex-none items-center justify-center rounded-full bg-olive/15 text-olive">
@@ -115,13 +122,25 @@ export default function ServicesPage() {
                     </li>
                   ))}
                 </ul>
+                <p className="mt-6 text-sm leading-relaxed text-muted-foreground">
+                  {TIER2_SCOPE_NOTICE}
+                </p>
 
                 <div className="mt-8 max-w-sm">
+                  {tier2Price && (
+                    <p className="mb-3 text-sm text-muted-foreground">
+                      <span className="font-heading text-2xl font-black text-foreground">{tier2Price}</span>{" "}
+                      incl. GST
+                    </p>
+                  )}
+                  <p className="mb-3 text-sm leading-relaxed text-muted-foreground">
+                    {TIER2_PRICE_INCLUSIONS}
+                  </p>
                   {tier2Price ? (
                     <BuyButton
                       code={TIER2_CODE}
                       price={tier2Price}
-                      label="Purchase WHS Gap Analysis"
+                      label="Start your Tier 2 assessment"
                     />
                   ) : (
                     <Link
@@ -133,8 +152,7 @@ export default function ServicesPage() {
                     </Link>
                   )}
                   <p className="mt-2.5 text-xs leading-relaxed text-muted-foreground">
-                    Purchase online and get instant access to your assessment, with no account setup required.
-                    Once payment is confirmed you&apos;ll be taken straight to the assessment portal.
+                    {TIER2_ACCESS_NOTICE}
                   </p>
                   <p className="mt-2 text-xs text-muted-foreground">
                     Already purchased?{" "}
@@ -220,11 +238,21 @@ export default function ServicesPage() {
                     <p className="mt-5 rounded-lg bg-muted px-4 py-3 text-sm leading-relaxed text-muted-foreground">
                       {tier.outcome}
                     </p>
+                    {tier.purchaseCode === TIER2_CODE && (
+                      <p className="mt-4 text-sm leading-relaxed text-muted-foreground">
+                        {TIER2_SCOPE_NOTICE}
+                      </p>
+                    )}
 
                     {/* CTA */}
                     <div className="mt-6">
                       {tier.action === "purchase" ? (
                         <>
+                          {tier.purchaseCode === TIER2_CODE && (
+                            <p className="mb-3 text-sm leading-relaxed text-muted-foreground">
+                              {TIER2_PRICE_INCLUSIONS}
+                            </p>
+                          )}
                           {price && (
                             <p className="mb-3 text-sm text-muted-foreground">
                               <span className="font-heading text-2xl font-black text-foreground">{price}</span>{" "}
@@ -236,11 +264,10 @@ export default function ServicesPage() {
                               <BuyButton
                                 code={tier.purchaseCode}
                                 price={price}
-                                label={`Buy ${tier.tier}`}
+                                label="Start your Tier 2 assessment"
                               />
                               <p className="mt-2.5 text-xs leading-relaxed text-muted-foreground">
-                                Purchase online and get instant access. Once payment is confirmed you&apos;ll be
-                                taken straight to the assessment portal.
+                                {TIER2_ACCESS_NOTICE}
                               </p>
                               <p className="mt-2 text-xs text-muted-foreground">
                                 Already purchased?{" "}

@@ -134,7 +134,7 @@ export const tiers = [
     tier: 'TIER 2',
     title: 'Internal Desktop WHS Gap Analysis',
     description:
-      'An online assessment completed by your WHS representative and submitted to Solum Safety Consulting for review. Available to purchase online.',
+      'Complete an online WHS assessment and submit it for independent desktop review by our safety consultants. Your report draft is quality-assured before release. Available to purchase online.',
   },
   {
     tier: 'TIER 3',
@@ -211,9 +211,22 @@ export const ASSESSMENT_SITE_URL =
 /** Returning clients log back in to their assessment here. */
 export const ASSESSMENT_LOGIN_HREF = `${ASSESSMENT_SITE_URL}/login`
 
+
 /** Customer-facing assurance for all WHS Gap Analysis report drafts. */
 export const REPORT_DRAFTING_NOTICE =
-  'Every WHS Gap Analysis report is AI-drafted and quality-assured by our safety consultants before the report draft is released to you.'
+  'Each WHS Gap Analysis report is initially drafted using AI. Our safety consultants review and quality-assure the draft before it is released to you.'
+
+/** Shared Tier 2 sales copy: consultant review is part of the assessment, not an optional extra. */
+export const TIER2_REVIEW_HEADLINE =
+  'Understand your WHS gaps—with independent safety consultant review.'
+export const TIER2_DESCRIPTION =
+  'Complete a structured assessment across 19 core WHS domains using your team’s knowledge, systems and supporting evidence. Solum Safety Consulting independently reviews your submission, with a detailed report, maturity rating and corrective action plan to help you understand your current position and prioritise improvements.'
+export const TIER2_PRICE_INCLUSIONS =
+  'Includes the online assessment, independent desktop review, maturity rating, corrective action plan and consultant quality assurance of your report draft.'
+export const TIER2_ACCESS_NOTICE =
+  'Get instant access to the assessment portal after payment. Your report draft is released after submission, review and consultant quality assurance.'
+export const TIER2_SCOPE_NOTICE =
+  'Tier 2 is a desktop assessment based on the information and evidence you supply. For on-site assessment and verification, enquire about Tier 3.'
 
 export const serviceTiers: {
   tier: string
@@ -232,18 +245,17 @@ export const serviceTiers: {
   {
     tier: 'TIER 2',
     title: 'Internal Desktop WHS Gap Analysis',
-    description:
-      'An assessment your WHS representative completes through our online assessment app, then submits to Solum Safety Consulting for review.',
+    description: TIER2_DESCRIPTION,
     points: [
+      'Independent desktop review of your submitted assessment by our safety consultants',
       'Structured assessment across 19 core WHS domains',
       'Completed online using your own knowledge, systems and evidence',
-      'Submitted to Solum for an independent desktop review',
-      'A detailed report based on the evidence you provide',
-      REPORT_DRAFTING_NOTICE,
-      'Maturity rating and corrective action plan included',
+      'A detailed report based on the information and evidence you provide',
+      'WHS maturity ratings and a corrective action plan to guide improvement',
+      'Safety consultant quality assurance before your report draft is released',
     ],
     outcome:
-      'Gives you a clear, evidence-based picture of where you stand and what to work on next.',
+      'A consultant-reviewed, evidence-based picture of where you stand and what to work on next. Report drafts are initially prepared using AI and quality-assured by our safety consultants before release.',
     popular: true,
     action: 'purchase',
     purchaseCode: TIER2_CODE,

@@ -5,17 +5,17 @@ import { ChevronLeft, ArrowRight } from "lucide-react"
 import { SiteHeader } from "@/components/site-header"
 import { SiteFooter } from "@/components/site-footer"
 import { SampleReportCard } from "@/components/sample-report-card"
-import { REPORT_DRAFTING_NOTICE, serviceTiers, sampleReports } from "@/lib/site"
+import { REPORT_DRAFTING_NOTICE, TIER2_SCOPE_NOTICE, serviceTiers, sampleReports } from "@/lib/site"
 
 export const metadata: Metadata = {
   title: "Example Reports | Solum Safety Consulting",
   description:
-    "See the standard of our WHS Gap Analysis reporting. Board-ready reports with evidence-based scoring, prioritised actions and a defensible audit trail across every tier.",
+    "Preview WHS Gap Analysis reports with maturity ratings and prioritised actions. AI-drafted reports are reviewed and quality-assured by safety consultants before draft release.",
   alternates: { canonical: "/reports" },
   openGraph: {
     title: "Example Reports | Solum Safety Consulting",
     description:
-      "Board-ready WHS Gap Analysis reports with evidence-based scoring, prioritised actions and a defensible audit trail across every tier.",
+      "WHS Gap Analysis reporting with evidence-based scoring and prioritised actions, reviewed and quality-assured by our safety consultants before draft release.",
     url: "/reports",
     type: "website",
   },
@@ -47,12 +47,13 @@ export default function ReportsPage() {
               <span className="text-xs font-bold uppercase tracking-[0.25em] text-accent">Example Reports</span>
             </div>
             <h1 className="mt-5 max-w-3xl text-pretty font-heading text-4xl font-black leading-[1.05] tracking-tight md:text-5xl">
-              See the quality of our assessment reporting
+              Clear WHS reporting, reviewed by our safety consultants
             </h1>
             <p className="mt-5 max-w-2xl text-lg leading-relaxed text-primary-foreground/85">
-              Every WHS Gap Analysis is delivered as a clear, board-ready report, with evidence-based
-              scoring, prioritised actions and a defensible audit trail. Below are representative samples
-              showing the first pages of each tier.
+              Our WHS Gap Analysis reports provide evidence-based maturity ratings and prioritised
+              corrective actions. Safety consultant review and quality assurance are included before
+              your report draft is released. Below are representative samples showing the first pages
+              of each tier.
             </p>
             <p className="mt-4 max-w-2xl text-sm font-medium leading-relaxed text-primary-foreground/90">
               {REPORT_DRAFTING_NOTICE}
@@ -69,6 +70,9 @@ export default function ReportsPage() {
                   <span className="text-xs font-bold uppercase tracking-[0.2em] text-terracotta">{tier.tier}</span>
                   <h2 className="mt-2 font-heading text-xl font-bold text-card-foreground">{tier.title}</h2>
                   <p className="mt-3 text-sm leading-relaxed text-muted-foreground">{tier.description}</p>
+                  {tier.tier === "TIER 2" && (
+                    <p className="mt-4 text-sm leading-relaxed text-muted-foreground">{TIER2_SCOPE_NOTICE}</p>
+                  )}
                 </article>
               ))}
             </div>
